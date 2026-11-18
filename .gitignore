@@ -6,9 +6,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .env
-chatgpt*.txt
-gemini*.txt
-mcp_tokens.txt
 
 # operator handbook: private, kept in the maintainer checkout only
 docs/ops/README.md
