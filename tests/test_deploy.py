@@ -6,6 +6,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -560,3 +561,80 @@ def test_drill_config_script_takes_secrets_only_from_hidden_prompts():
     assert text.count("read -r -s") == 1 and "umask 077" in text and "chmod 600" in text
     assert 'echo "$secret"' not in text and 'echo "$password"' not in text
     assert "/etc/dayfile" not in text  # it is for the operator's own machine, not the server
+
+
+STATS = DEPLOY / "cloud" / "launch-stats.sh"
+COMPOSE_STUB = """#!/bin/sh
+# stands in for `docker compose`: answers the commands launch-stats.sh runs
+case "$*" in
+*"admin stats"*) cat "$STUB_DIR/accounts-stats.json" ;;
+*"tenant stats"*) cat "$STUB_DIR/tenant-stats.json" ;;
+*"account list"*) cat "$STUB_DIR/accounts.jsonl" ;;
+*) echo "unexpected: $*" >&2; exit 9 ;;
+esac
+"""
+
+
+def run_stats(tmp_path, *args):
+    from datetime import datetime
+
+    today = datetime.now(UTC).date().isoformat()
+    stub = tmp_path / "compose"
+    stub.write_text(COMPOSE_STUB)
+    stub.chmod(0o755)
+    (tmp_path / "accounts-stats.json").write_text(
+        json.dumps(
+            {
+                "at": "2026-11-18T18:00:00Z",
+                "accounts": {"active": 5, "suspended": 0, "deleted": 1},
+                "new_per_day": {today: 2},
+                "feature_interest": {"alerts": {"signed_in": 1, "signed_out": 2}},
+                "with_signup_answer": 3,
+                "with_contact_email": 4,
+            }
+        )
+    )
+    (tmp_path / "tenant-stats.json").write_text(
+        json.dumps({"logs": 6, "unreadable": 0, "activated": 5})
+    )
+    (tmp_path / "accounts.jsonl").write_text(
+        json.dumps(
+            {
+                "github_login": "octo",
+                "created_at": "2026-11-18T16:43:07Z",
+                "status": "active",
+                "slug": "octo-log",
+            }
+        )
+        + "\n"
+        + json.dumps(
+            {
+                "github_login": "deleted",
+                "created_at": "2026-11-11T00:57:54Z",
+                "status": "deleted",
+                "slug": None,
+            }
+        )
+        + "\n"
+    )
+    env = {**os.environ, "COMPOSE": str(stub), "STUB_DIR": str(tmp_path)}
+    return subprocess.run(
+        ["bash", str(STATS), *args], env=env, capture_output=True, text=True, check=False
+    )
+
+
+def test_launch_stats_prints_the_headline_numbers(tmp_path):
+    r = run_stats(tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert "5 active, 1 deleted" in r.stdout
+    assert "2 today, 2 in the last 7 days" in r.stdout
+    assert "6 (5 have events" in r.stdout
+    assert "3 plan answers, 4 contact emails" in r.stdout
+    assert "alerts 3" in r.stdout
+
+
+def test_launch_stats_accounts_lists_who_signed_up_without_the_deleted_login(tmp_path):
+    r = run_stats(tmp_path, "accounts")
+    assert r.returncode == 0, r.stderr
+    assert "octo" in r.stdout and "octo-log" in r.stdout
+    assert "(deleted)" in r.stdout
