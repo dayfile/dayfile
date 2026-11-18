@@ -57,6 +57,21 @@ For a server that stays up, use Docker or systemd: [`deploy/selfhost`](https://g
 
 Extras: `pip install "dayfile[mcp]"` for the assistant (MCP) server, `"dayfile[web]"` for the dayfile.app web app.
 
+## Feed URLs
+
+A feed URL answers two questions: **which view** of the log, and **who is asking**.
+
+| Path | Meaning | Example |
+|---|---|---|
+| `/feed.json`, `/feed.atom` | the default feed: the whole log, filtered by query parameters | `/feed.json?tag=todo&status=open` |
+| `/f/<name>.json`, `.atom` | a **named feed**: a saved filter (tags, status, time window) with a fixed meaning | `/f/todo-open.atom` |
+| `/t/<token>/...` | the same feeds, with a **read token in the path**, for feed readers that cannot send headers | `/t/<token>/f/todo-open.atom` |
+
+- Programs should send the token as `Authorization: Bearer <token>` and leave `/t/<token>` out; the path form is a compatibility layer.
+- The token decides what you may see (its audience labels), and it can expire or be revoked. Treat a URL that contains one as a secret.
+- A named feed is `private` unless you make it `public`. Anyone can read a public feed without a token, but only the events whose audience includes `public`.
+- Create and manage named feeds and tokens in the web app (Feeds, Tokens) or with the CLI. The full list of endpoints is on the [docs page](https://dayfile.app/docs) and in [docs/SPEC.md](https://github.com/dayfile/dayfile/blob/master/docs/SPEC.md).
+
 ## JSON API
 
 ```
