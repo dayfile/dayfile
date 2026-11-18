@@ -50,15 +50,6 @@ For a server that stays up, use Docker or systemd: [`deploy/selfhost`](https://g
 
 Extras: `pip install "dayfile[mcp]"` for the assistant (MCP) server, `"dayfile[web]"` for the dayfile.app web app.
 
-### Working on dayfile
-
-```
-git clone https://github.com/dayfile/dayfile && cd dayfile
-uv sync                   # add --extra web to run the web app
-uv run pytest
-uv run ruff check . && uv run ruff format --check .
-```
-
 ## JSON API
 
 ```
@@ -117,6 +108,10 @@ The web app (`src/dayfile/web`, install with `pip install "dayfile[web]"`) is a 
 
 - Keep the server on localhost or behind a trusted TLS proxy; tokens in URL paths are a compatibility layer for feed readers.
 - Only token hashes are stored; token values are redacted from logs. `.env` is gitignored.
+
+## Contributing
+
+Want to change dayfile itself? Setup, tests and the rules for changes are in [CONTRIBUTING.md](https://github.com/dayfile/dayfile/blob/master/CONTRIBUTING.md).
 
 ## License
 

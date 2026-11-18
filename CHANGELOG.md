@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- README: the contributor steps moved to CONTRIBUTING.md; the README is about using dayfile.
+
 ## 0.1.1
 
 - README quick start: `dayfile add` needs `--db` to write straight into the local log.
