@@ -1,6 +1,6 @@
 # Launch checklist
 
-What is done, and what is waiting on the operator. Updated 2026-11-14.
+What is done, and what is waiting on the operator. Updated 2026-11-18.
 
 ## Done
 
@@ -8,14 +8,16 @@ What is done, and what is waiting on the operator. Updated 2026-11-14.
 - Backups: nightly encrypted copy off the Droplet (the logs and the accounts database), `verify-backup`, a passing restore drill, weekly purge of deleted logs.
 - Export and delete from Settings; terms and privacy drafts match the behavior.
 - `security.txt`, `www` redirect, gzip, week-long cache for static files, Lighthouse 98/100/100/100.
-- CI on every push (Python 3.11 to 3.15); a publish workflow for PyPI (inactive until the repo is public).
+- CI on every push (Python 3.11 to 3.15); publishing to PyPI by trusted publisher (dayfile 0.1.2 is live).
 - Self-host path tested from scratch (token, write, read, backup).
 - Healthchecks.io: backup and heartbeat-checker checks are green (2026-11-14); a failed backup pings `/fail`.
+- Repository public as one squashed commit (gitleaks clean); secret scanning, push protection, private vulnerability reporting and branch protection on; the earlier history is kept in the private archive repo.
+- Smoke test against production passed 2026-11-18 (`smoke-test.sh dayfile.cloud` with `SMOKE_MCP=1`: tokens, write and read isolation, MCP discovery, TLS, redirects), plus every public page, the status JSON and page, headers and the GitHub sign-in redirect.
 - Heartbeats (a source or tag going quiet writes an open `heartbeat` to-do), the hosted MCP endpoint and a local `dayfile mcp`.
 
 ## Waiting on the operator
 
-### 1. Uptime and alerts
+### 1. Uptime and alerts (monitors done; check the DigitalOcean alert policies)
 
 UptimeRobot (free), alert contacts `team@dayfile.app` plus a phone push:
 
@@ -71,7 +73,7 @@ contributions. The terms and privacy pages and the signup checkbox still say "dr
 The old tokens were wiped with the logs on 2026-11-12. If a script or the notifier used one, mint a new token in
 Settings and update it there.
 
-### 6. When going public
+### 6. When going public (done 2026-11-18: public, 0.1.0 to 0.1.2 on PyPI)
 
 Make the repo public (the footer's GitHub link starts working), set up the PyPI trusted publisher (project `dayfile`,
 workflow `publish.yml`, environment `pypi`), bump the version to 0.1.0, publish a release.
