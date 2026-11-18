@@ -8,10 +8,10 @@
 
 <h2>The ideas</h2>
 <dl class="terms">
-<dt>Log</dt><dd>Your one append-only record of everything that happened, at <code>NAME.dayfile.cloud</code>. NAME is your username, so the username, the log and its address are the same thing. You get one log. Nothing in it is edited or deleted.</dd>
+<dt>Log</dt><dd>Your one append-only record of everything that happened, at <code>USERNAME.dayfile.cloud</code>. USERNAME is your username, so the username, the log and its address are the same thing. You get one log. Nothing in it is edited or deleted.</dd>
 <dt>Event</dt><dd>One entry in the log: a title, plus optional detail, tags and times. "Backup finished" is an event.</dd>
 <dt>Tag</dt><dd>A free label you attach to group events, such as <code>launch</code> or <code>health</code>. An event can have many tags, and you can filter by them. One tag is special: <code>todo</code>. An event tagged <code>todo</code> is a to-do: it starts open and gets a Close button. Every other event has no status.</dd>
-<dt>Feed</dt><dd>A saved filtered view of the log, for example "all events tagged <code>work</code>". Feeds hold no data of their own: the log is the single source of truth and a feed is a window onto it. Your log has a default feed, and you can add named ones at <code>/f/NAME</code>. Reading a feed in a browser, an RSS or Atom feed reader or code gives the same events.</dd>
+<dt>Feed</dt><dd>A saved filtered view of the log, for example "all events tagged <code>work</code>". Feeds hold no data of their own: the log is the single source of truth and a feed is a window onto it. Your log has a default feed, and you can add named ones at <code>/f/FEED</code>. Reading a feed in a browser, an RSS or Atom feed reader or code gives the same events.</dd>
 <dt>Live updates</dt><dd>Staying connected so new events reach you as they arrive, instead of asking again (see Staying up to date). Any feed or the whole log can be followed this way.</dd>
 <dt>Token</dt><dd>A password for one job. A <strong>write token</strong> can only add events, and can be limited to named sources. A <strong>read token</strong> can only read, limited by audience labels. Make one per script or device so you can revoke it alone.</dd>
 <dt>Audience</dt><dd>A label on an event that decides who may read it. With none, only you can (<code>self</code>). The label <code>public</code> lets a public feed show it.</dd>
@@ -20,16 +20,16 @@
 
 <h2>Quick start</h2>
 <h3>Post an event</h3>
-<pre><code>curl -X POST https://NAME.dayfile.cloud/events \
+<pre><code>curl -X POST https://USERNAME.dayfile.cloud/events \
   -H "Authorization: Bearer WRITE_TOKEN" \
   -H "content-type: application/json" \
   -d '{"title":"Hello"}'</code></pre>
 <p>It answers <code>201</code> with the stored event. Only <code>title</code> is required. dayfile fills in the id, the time, and the source when your write token has exactly one. Each quick post is a new event. To make retries safe, send the full form with a <code>source.id</code> and <code>ref</code> (see Events): posting the same pair again returns the existing event with <code>200</code>.</p>
 <h3>Read it back</h3>
-<pre><code>curl -H "Authorization: Bearer READ_TOKEN" https://NAME.dayfile.cloud/events</code></pre>
+<pre><code>curl -H "Authorization: Bearer READ_TOKEN" https://USERNAME.dayfile.cloud/events</code></pre>
 <p>For an RSS reader (any feed reader that understands Atom or JSON Feed) that cannot send headers, use the token in the path:</p>
-<pre><code>https://NAME.dayfile.cloud/t/READ_TOKEN/feed.json
-https://NAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
+<pre><code>https://USERNAME.dayfile.cloud/t/READ_TOKEN/feed.json
+https://USERNAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
 <p class="muted">Anyone holding that URL can read the log. Treat it like a password.</p>
 
 <h2>Events</h2>
@@ -70,17 +70,17 @@ https://NAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
 <tr><td><code>GET /usage</code></td><td>read</td><td>How full your log is: events and bytes used, your limits, and the write rate.</td></tr>
 <tr><td><code>GET /events/stream</code></td><td>read</td><td>Live updates (Server-Sent Events).</td></tr>
 <tr><td><code>GET /feed.json</code>, <code>/feed.atom</code></td><td>read</td><td>The default feed.</td></tr>
-<tr><td><code>GET /f/NAME.json</code>, <code>.atom</code></td><td>read, or none if public</td><td>A named feed.</td></tr>
-<tr><td><code>GET /t/TOKEN/feed.json</code> and <code>/t/TOKEN/f/NAME.json</code></td><td>in the path</td><td>The same feeds, for readers that cannot send headers.</td></tr>
+<tr><td><code>GET /f/FEED.json</code>, <code>.atom</code></td><td>read, or none if public</td><td>A named feed.</td></tr>
+<tr><td><code>GET /t/READ_TOKEN/feed.json</code> and <code>/t/READ_TOKEN/f/FEED.json</code></td><td>in the path</td><td>The same feeds, for readers that cannot send headers.</td></tr>
 <tr><td><code>/mcp</code></td><td>read, and optionally write</td><td>The assistant connection, described below.</td></tr>
 </table></div>
 <p>Make tokens under <strong>Tokens</strong> in the web app (choose read or write, a source name for write tokens, and an expiry; the secret is shown once) and named feeds under <strong>Feeds</strong>.</p>
 
 <h2>Feeds, private and public</h2>
 <p>Your log has a default feed at <code>/feed.json</code> (or <code>.atom</code>) and you can add named feeds, each a saved filter:</p>
-<pre><code>https://NAME.dayfile.cloud/f/work.json
-https://NAME.dayfile.cloud/f/work.atom
-https://NAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, for feed readers)</code></pre>
+<pre><code>https://USERNAME.dayfile.cloud/f/work.json
+https://USERNAME.dayfile.cloud/f/work.atom
+https://USERNAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, for feed readers)</code></pre>
 <p>A feed without a suffix (<code>/f/work</code>) answers with JSON Feed. A named feed's filter is fixed: the URL accepts only paging (<code>limit</code>, <code>since_seq</code>).</p>
 <p>A feed is <strong>private</strong> by default and needs a read token. Make it <strong>public</strong> and anyone can read it with no token, read only. A public feed shows only events that match its filter <em>and</em> carry the audience label <code>public</code> (<code>"audience": ["public"]</code>), so nothing is exposed unless you marked it. Posting still needs a write token. Turning a feed private stops it at once, though copies other people already made may remain.</p>
 
@@ -91,7 +91,7 @@ https://NAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, for fe
 <h2>Recipes</h2>
 <h3>Cron or any shell script</h3>
 <pre><code>0 3 * * * backup.sh &amp;&amp; \
-  curl -fsS -X POST https://NAME.dayfile.cloud/events \
+  curl -fsS -X POST https://USERNAME.dayfile.cloud/events \
     -H "Authorization: Bearer $DAYFILE_WRITE_TOKEN" -H "content-type: application/json" \
     -d '{"title":"Nightly backup finished","tags":["backup"]}'</code></pre>
 <p>To record failures too, post a second event on the other branch: <code>|| curl ... -d '{"title":"Nightly backup FAILED","tags":["backup","alert"],"urgency":2}'</code>.</p>
@@ -100,7 +100,7 @@ https://NAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, for fe
 
 def log(title, **fields):
     req = urllib.request.Request(
-        "https://NAME.dayfile.cloud/events",
+        "https://USERNAME.dayfile.cloud/events",
         json.dumps({"title": title, **fields}).encode(),
         {"Authorization": "Bearer " + os.environ["DAYFILE_WRITE_TOKEN"],
          "content-type": "application/json"},
@@ -113,12 +113,12 @@ log("Deployed v1.8", tags=["deploy"])</code></pre>
 {% raw %}<pre><code>- name: Tell dayfile
   if: always()
   run: |
-    curl -fsS -X POST https://NAME.dayfile.cloud/events \
+    curl -fsS -X POST https://USERNAME.dayfile.cloud/events \
       -H "Authorization: Bearer ${{ secrets.DAYFILE_WRITE_TOKEN }}" \
       -H "content-type: application/json" \
       -d "{\"title\":\"${{ github.workflow }} ${{ job.status }}\",\"tags\":[\"ci\"]}"</code></pre>{% endraw %}
 <h3>n8n, Zapier and other automation tools</h3>
-<p>Use an HTTP Request step: method <code>POST</code>, URL <code>https://NAME.dayfile.cloud/events</code>, a header <code>Authorization: Bearer WRITE_TOKEN</code>, and a JSON body such as <code>{"title": "New order", "tags": ["shop"]}</code>. Any tool that can send a webhook with a header can post.</p>
+<p>Use an HTTP Request step: method <code>POST</code>, URL <code>https://USERNAME.dayfile.cloud/events</code>, a header <code>Authorization: Bearer WRITE_TOKEN</code>, and a JSON body such as <code>{"title": "New order", "tags": ["shop"]}</code>. Any tool that can send a webhook with a header can post.</p>
 <p class="muted">Put the token in the tool's secret store, not in the workflow text. Give each job its own write token and source name so you can tell them apart and revoke one without touching the rest.</p>
 
 <h2>Changing your mind</h2>

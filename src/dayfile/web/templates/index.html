@@ -14,7 +14,7 @@
   </div>
   <div class="hero-art" aria-hidden="true">
     <div class="mock">
-      <div class="mock-bar"><span></span><span></span><span></span><b>you.dayfile.cloud</b></div>
+      <div class="mock-bar"><span></span><span></span><span></span><b>myname.dayfile.cloud</b></div>
       <div class="mock-event new"><div class="meta"><i class="dot amber"></i><em>just now</em><span class="chip">alert</span><span class="chip">ops</span></div><h3>Disk at 82% on web-1</h3></div>
       <div class="mock-event"><div class="meta"><i class="dot green"></i><em>40 min ago</em><span class="chip">deploy</span></div><h3>Deployed v1.8.2 to production</h3></div>
       <div class="mock-event"><div class="meta"><i class="dot green"></i><em>2 h ago</em><span class="chip">backup</span></div><h3>Nightly backup finished: 12 logs, 4.1 MB</h3></div>
@@ -27,7 +27,7 @@
   <h2>What people use it for</h2>
   <div class="features uses">
     <div><h3>A history of your automations</h3><p>Backups, cron jobs and scripts each post one line when they run. Open your log to see what ran, what didn't, and when.</p>
-<pre><code>curl -X POST https://you.dayfile.cloud/events \
+<pre><code>curl -X POST https://myname.dayfile.cloud/events \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "Backup finished"}'</code></pre></div>
@@ -44,7 +44,7 @@
   <p class="takeaway">Write once, then read the same history from different places.</p>
   {% include "_diagram.html" %}
   <ol class="steps">
-    <li><h3>Get your address</h3><p>Sign in with GitHub and pick a username. That gives you <code>you.dayfile.cloud</code>, your log.</p></li>
+    <li><h3>Get your address</h3><p>Sign in with GitHub and pick a username. That gives you <code>myname.dayfile.cloud</code>, your log.</p></li>
     <li><h3>Make a token for each thing that writes</h3><p>A token is a password for one job. A <strong>write token</strong> can only add events, so you can give one to a script, an automation or a device. A <strong>read token</strong> can only read.</p></li>
     <li><h3>Send events</h3><p>An event is a short note with a title: "Backup finished", "Deployed v1.8 to production". Anything that can make a web request can send one.</p></li>
     <li><h3>Read it where you like</h3><p>Open your log here, subscribe in any RSS or Atom feed reader, or fetch it as JSON. Make a feed public to share it without a password.</p></li>
@@ -56,16 +56,16 @@
   <h2>See it in two commands</h2>
   <div class="code-pair">
     <div><p class="label">Write</p>
-<pre><code>curl -X POST https://you.dayfile.cloud/events \
+<pre><code>curl -X POST https://myname.dayfile.cloud/events \
   -H "Authorization: Bearer $WRITE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "Deployed v1.8 to production"}'</code></pre></div>
     <div><p class="label">Read</p>
-<pre><code>curl https://you.dayfile.cloud/feed.json?tag=todo&amp;status=open \
+<pre><code>curl https://myname.dayfile.cloud/feed.json?tag=todo&amp;status=open \
   -H "Authorization: Bearer $READ_TOKEN"
 
 # or subscribe in any RSS or Atom reader:
-# https://you.dayfile.cloud/t/&lt;token&gt;/feed.atom</code></pre></div>
+# https://myname.dayfile.cloud/t/&lt;token&gt;/feed.atom</code></pre></div>
   </div>
   <p class="muted">Sign in and create both tokens in a click, under Tokens. A write token can only post; a read token can only read.</p>
   <div class="actions">{% if nav_state %}<a class="button" href="{{ "/log" if nav_state == "log" else "/account" }}">Open your log</a>{% else %}<a class="button" href="/login">Sign in with GitHub</a>{% endif %}<a class="button ghost" href="/demo">See a live example</a></div>

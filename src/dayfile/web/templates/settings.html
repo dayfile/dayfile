@@ -7,7 +7,7 @@
 <p>Signed in with GitHub as <strong>{{ login }}</strong>.</p>
 <form method="post" action="/account/logout"><div class="actions"><button class="ghost" type="submit">Sign out</button></div></form>
 <h3>Username</h3>
-<p>Your username and your log are one and the same: <strong><code>{{ slug }}.{{ base_domain }}</code></strong>. Feeds live under it at <code>/f/&lt;name&gt;</code>.</p>
+<p>Your username and your log are one and the same: <strong><code>{{ slug }}.{{ base_domain }}</code></strong>. Feeds live under it at <code>/f/&lt;feed&gt;</code>.</p>
 <p>Renaming changes the address at once. Anything using the old address, such as saved feed URLs, stops working; tokens keep working on the new one. The old name stays reserved for you for one day.</p>
 <form class="stack" method="post" action="/account/rename">
   <label for="newslug">New username</label>

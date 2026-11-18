@@ -80,7 +80,7 @@ workflow `publish.yml`, environment `pypi`), bump the version to 0.1.0, publish 
 
 ## Connectors (hosted MCP)
 
-- [ ] In claude.ai, Customize, Connectors, Add custom connector with `https://<your-username>.dayfile.cloud/mcp`; confirm the Connect screen appears, approve, and ask what is open. Repeat read only.
-- [ ] `claude mcp add --transport http dayfile https://<your-username>.dayfile.cloud/mcp` and `/mcp` sign-in work.
+- [ ] In claude.ai, Customize, Connectors, Add custom connector with `https://<username>.dayfile.cloud/mcp`; confirm the Connect screen appears, approve, and ask what is open. Repeat read only.
+- [ ] `claude mcp add --transport http dayfile https://<username>.dayfile.cloud/mcp` and `/mcp` sign-in work.
 - [ ] Optional: submit dayfile to the connectors directory (a separate review by Anthropic).
 - [ ] After a deploy, `SMOKE_MCP=1 deploy/cloud/smoke-test.sh dayfile.cloud` also checks `/mcp`.

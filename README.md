@@ -4,7 +4,7 @@
 
 **[dayfile.app](https://dayfile.app)**: a personal, append-only event log, served as feeds (JSON Feed, Atom,
 CloudEvents). Free beta: [see the demo](https://dayfile.app/demo), then sign in with GitHub and get your own log at
-`<you>.dayfile.cloud`. Or self-host it: `pip install dayfile`, below.
+`<username>.dayfile.cloud`. Or self-host it: `pip install dayfile`, below.
 
 Anything that can send an HTTP request can add events: a script, a webhook, a device, an AI assistant over MCP. The log
 is the source of truth; feeds are projections of it, addressed by URL queries such as
@@ -64,7 +64,7 @@ A feed URL answers two questions: **which view** of the log, and **who is asking
 | Path | Meaning | Example |
 |---|---|---|
 | `/feed.json`, `/feed.atom` | the default feed: the whole log, filtered by query parameters | `/feed.json?tag=todo&status=open` |
-| `/f/<name>.json`, `.atom` | a **named feed**: a saved filter (tags, status, time window) with a fixed meaning | `/f/todo-open.atom` |
+| `/f/<feed>.json`, `.atom` | a **named feed**: a saved filter (tags, status, time window) with a fixed meaning | `/f/todo-open.atom` |
 | `/t/<token>/...` | the same feeds, with a **read token in the path**, for feed readers that cannot send headers | `/t/<token>/f/todo-open.atom` |
 
 - Programs should send the token as `Authorization: Bearer <token>` and leave `/t/<token>` out; the path form is a compatibility layer.
@@ -101,14 +101,14 @@ See the JSON API section of [docs/SPEC.md](https://github.com/dayfile/dayfile/bl
 
 Let an assistant such as Claude read and write your log. Both ways use the same five tools (`dayfile_list_events`, `dayfile_get_event`, `dayfile_add_event`, `dayfile_close_todo`, `dayfile_retract_event`) and can do only what their tokens allow.
 
-**Hosted (dayfile.cloud).** Every log has an MCP address, `https://<you>.dayfile.cloud/mcp`. In Claude, open Customize, then Connectors, then Add custom connector, paste that address and press Connect: you sign in with GitHub and choose read and write or read only. Claude Code can use it too: `claude mcp add --transport http dayfile https://<you>.dayfile.cloud/mcp`, then `/mcp` to sign in. To skip the sign-in, send a read token and a write token joined with `~` as `Authorization: Bearer <read>~<write>` (read only: the read token alone). Disconnect any time under Tokens.
+**Hosted (dayfile.cloud).** Every log has an MCP address, `https://<username>.dayfile.cloud/mcp`. In Claude, open Customize, then Connectors, then Add custom connector, paste that address and press Connect: you sign in with GitHub and choose read and write or read only. Claude Code can use it too: `claude mcp add --transport http dayfile https://<username>.dayfile.cloud/mcp`, then `/mcp` to sign in. To skip the sign-in, send a read token and a write token joined with `~` as `Authorization: Bearer <read>~<write>` (read only: the read token alone). Disconnect any time under Tokens.
 
 **Local, over stdio.** `dayfile mcp` (`pip install "dayfile[mcp]"`) calls the API at `$DAYFILE_URL` with a read token in `$DAYFILE_READ_TOKEN` and a write token in `$DAYFILE_WRITE_TOKEN`; leave the write token out for a read-only assistant. This is the way to use a self-hosted server without OAuth.
 
 ```json
 {"mcpServers": {"dayfile": {
   "command": "uvx", "args": ["--from", "dayfile[mcp]", "dayfile", "mcp"],
-  "env": {"DAYFILE_URL": "https://you.dayfile.cloud",
+  "env": {"DAYFILE_URL": "https://myname.dayfile.cloud",
           "DAYFILE_READ_TOKEN": "...", "DAYFILE_WRITE_TOKEN": "..."}}}}
 ```
 
@@ -116,7 +116,7 @@ Self-hosting the hosted endpoint: set `DAYFILE_MCP=1` (needs `dayfile[mcp]`) and
 
 ## Two ways to run it
 
-**Hosted:** [dayfile.app](https://dayfile.app), nothing to run: your log, feeds, tokens and MCP endpoint at `<you>.dayfile.cloud`.
+**Hosted:** [dayfile.app](https://dayfile.app), nothing to run: your log, feeds, tokens and MCP endpoint at `<username>.dayfile.cloud`.
 **Self-hosted:** your own server. The same code serves both; the difference is configuration.
 
 | | Self-hosted ([`deploy/selfhost`](https://github.com/dayfile/dayfile/blob/master/deploy/selfhost)) | Managed-service profile ([`deploy/cloud`](https://github.com/dayfile/dayfile/blob/master/deploy/cloud)) |
