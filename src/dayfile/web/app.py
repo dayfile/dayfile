@@ -405,8 +405,15 @@ def create_web_app(
     # --- sign in and out ------------------------------------------------------------
 
     @app.api_route("/login", methods=["GET", "HEAD"], response_class=HTMLResponse)
-    async def login_form(request: Request, expired: str = "", connect: str = "") -> HTMLResponse:
-        """The sign-in form; `?expired=1` explains why the visitor is back here."""
+    async def login_form(request: Request, expired: str = "", connect: str = "") -> Response:
+        """The sign-in form; `?expired=1` explains why the visitor is back here.
+
+        Someone who is already signed in goes to the log instead. `?expired=1` is exempt: it
+        is where a dead session lands, and a log that cannot open must not bounce back here.
+        """
+        if expired != "1" and connect != "1":
+            if getattr(request.state, "signed_in", False) or request.cookies.get(cookie):
+                return RedirectResponse("/log", status_code=303)
         return page(
             request, "login.html", expired=expired == "1", connect=connect == "1", slug="", error=""
         )
@@ -1544,23 +1551,25 @@ def create_web_app(
             **cursors(result.body, filters),
         )
 
+    def lapsed_poll(request: Request) -> Response:
+        """A poll whose read session is gone: an account goes back to the log, which opens a new
+        viewer; anyone else is sent to sign in."""
+        again = "/log" if getattr(request.state, "signed_in", False) else "/login?expired=1"
+        return signed_out(Response(status_code=401, headers={"HX-Redirect": again}))
+
     @app.get("/log/new", response_class=HTMLResponse)
     async def log_new(request: Request, after: str = "", released: str = "") -> Response:
         """What arrived since the page's cursors, as a fragment the page swaps in (htmx)."""
         who = session(request)
         if who is None:
-            return signed_out(
-                Response(status_code=401, headers={"HX-Redirect": "/login?expired=1"})
-            )
+            return lapsed_poll(request)
         if not (after.isdigit() and len(after) <= 12 and RELEASED.fullmatch(released)):
             return PlainTextResponse("bad cursor", status_code=400)
         filters = parse_filters(request.query_params)
         params = [("since_seq", after), ("released_after", released), *filters.api(limit=200)]
         result: ApiResult = await run_in_threadpool(request.app.state.fetch, who[0], who[1], params)
         if result.status in (401, 403, 404):
-            return signed_out(
-                Response(status_code=401, headers={"HX-Redirect": "/login?expired=1"})
-            )
+            return lapsed_poll(request)
         if result.status == 200 and isinstance(result.body, dict):
             events, body = cards(result.body["events"]), result.body
         else:  # keep polling from the same place

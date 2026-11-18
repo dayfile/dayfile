@@ -575,6 +575,13 @@ def test_a_late_release_arrives_through_polling(web, backend):
     assert "held back" not in web.get(poller_url(r.text)).text  # and only once
 
 
+def test_sign_in_page_sends_a_visitor_with_a_read_session_to_the_log(web, backend):
+    sign_in(web, backend)
+    r = web.get("/login", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/log"
+    assert web.get("/login?expired=1").status_code == 200  # the way out of a dead session
+
+
 def test_polling_after_the_session_ends_redirects_the_browser_to_sign_in(web, backend):
     backend.post(title="x")
     sign_in(web, backend)

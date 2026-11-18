@@ -402,6 +402,24 @@ def test_the_log_tab_opens_the_viewer_for_a_signed_in_account(web, db):
     assert web.get("/log?fresh=1").status_code == 200
 
 
+def test_sign_in_page_sends_a_signed_in_account_to_the_log(web, db):
+    with_log(web, db)
+    r = web.get("/login")
+    assert r.status_code == 303 and r.headers["location"] == "/log"
+
+
+def test_sign_in_page_shows_the_expired_notice_even_to_a_signed_in_account(web, db):
+    with_log(web, db)  # no redirect here, or a failing log would loop back to it
+    r = web.get("/login?expired=1")
+    assert r.status_code == 200 and "session ended" in r.text
+
+
+def test_polling_with_a_lapsed_viewer_token_goes_back_to_the_log_for_a_signed_in_account(web, db):
+    with_log(web, db)
+    r = web.get("/log/new?after=0&released=2026-11-10T09%3A00%3A00Z")
+    assert r.status_code == 401 and r.headers["hx-redirect"] == "/log"  # the log mints a new viewer
+
+
 # --- feeds ---
 
 
