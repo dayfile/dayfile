@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="dayfile logo">
-  <rect width="128" height="128" rx="28" fill="#1e2a47"/>
+  <rect width="128" height="128" rx="28" fill="#1b2a4a"/>
   <!-- the log: newest entry on top, older entries fade below -->
   <rect x="30" y="32" width="68" height="14" rx="7" fill="#ffffff"/>
   <rect x="30" y="57" width="52" height="14" rx="7" fill="#ffffff" fill-opacity="0.65"/>
   <rect x="30" y="82" width="36" height="14" rx="7" fill="#ffffff" fill-opacity="0.35"/>
   <!-- the feed signal -->
-  <circle cx="98" cy="39" r="11" fill="#f5a524"/>
+  <circle cx="98" cy="39" r="11" fill="#f5a623"/>
 </svg>

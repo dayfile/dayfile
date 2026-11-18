@@ -2,17 +2,24 @@
 
 # dayfile
 
-A personal, append-only event log exposed as feed views (JSON Feed, Atom, CloudEvents).
-Events arrive from email, SMS, webhooks, cron generators and agents. The log is the source
-of truth; feeds are projections of it, addressed by URL queries such as
-`/feed.json?tag=todo&status=open&within=7d`.
+**[dayfile.app](https://dayfile.app)**: a personal, append-only event log, served as feeds (JSON Feed, Atom,
+CloudEvents). Free beta: [see the demo](https://dayfile.app/demo), then sign in with GitHub and get your own log at
+`<you>.dayfile.cloud`. Or self-host it: `pip install dayfile`, below.
+
+Anything that can send an HTTP request can add events: a script, a webhook, a device, an AI assistant over MCP. The log
+is the source of truth; feeds are projections of it, addressed by URL queries such as
+`/feed.json?tag=todo&status=open&within=7d`. dayfile keeps the log, enforces who may write and read, and serves the
+feeds and the API. Getting events into the right shape from other systems (email, SMS, cron jobs) is the job of whatever
+posts them; the repo includes optional adapters for self-hosters.
 
 - Append-only SQLite log, enforced by triggers. State changes are new events that point back at the original (close it, replace it, retract it); the status of an event is worked out from that chain.
 - Time release (`visible_at`, `expires_at`), idempotent ingest, deny-by-default audiences.
-- A JSON API (`GET /events`, long-poll, live SSE stream) next to the feeds.
+- A JSON API (`GET /events`, long-poll, live SSE stream) next to the feeds, and an MCP server so assistants such as Claude can read and write the log.
 - Per-credential feeds: read tokens (Bearer header or `/t/<token>/` path) and write-only tokens.
-- Push to ntfy, Ed25519 signed events, CloudEvents import/export, Gmail/Google Voice SMS ingest (IMAP IDLE).
-- A web app (`dayfile[web]`): sign in with GitHub, a log you can read and post to, tokens, feeds (private or public) and settings. It is the managed service at dayfile.app; see below for what runs where.
+- Heartbeats: say how often a source should report and dayfile writes an open to-do when it goes quiet.
+- A web app (`dayfile[web]`): sign in with GitHub, a log you can read and post to, tokens, feeds (private or public) and settings. It is what runs at [dayfile.app](https://dayfile.app); see below for what runs where.
+- Ed25519 signed events and CloudEvents import/export.
+- Optional adapters for self-hosters, not part of the hosted service: Gmail/Google Voice SMS ingest over IMAP, weather and digest generators, ntfy push.
 
 Design: [docs/SPEC.md](https://github.com/dayfile/dayfile/blob/master/docs/SPEC.md). Milestones and status: [docs/ROADMAP.md](https://github.com/dayfile/dayfile/blob/master/docs/ROADMAP.md).
 Contributor rules: [CLAUDE.md](https://github.com/dayfile/dayfile/blob/master/CLAUDE.md).
@@ -94,7 +101,8 @@ Self-hosting the hosted endpoint: set `DAYFILE_MCP=1` (needs `dayfile[mcp]`) and
 
 ## Two ways to run it
 
-The same code serves both; the difference is configuration.
+**Hosted:** [dayfile.app](https://dayfile.app), nothing to run: your log, feeds, tokens and MCP endpoint at `<you>.dayfile.cloud`.
+**Self-hosted:** your own server. The same code serves both; the difference is configuration.
 
 | | Self-hosted ([`deploy/selfhost`](https://github.com/dayfile/dayfile/blob/master/deploy/selfhost)) | Managed-service profile ([`deploy/cloud`](https://github.com/dayfile/dayfile/blob/master/deploy/cloud)) |
 |---|---|---|
