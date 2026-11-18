@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Feeds · dayfile{% endblock %}
+{% block main %}
+<h1>Feeds</h1>
+{% include "_feedtabs.html" %}
+<p class="lede">A feed is a saved filter on your events, served at <code>/f/&lt;name&gt;</code> under your username. <strong>Private</strong> feeds need a read token. A <strong>public</strong> feed can be read by anyone without a token, and shows only events that match the filter <em>and</em> carry the audience label <code>public</code>.</p>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<div class="scroll"><table>
+<tr><th>Feed</th><th>Filter</th><th>Visibility</th><th>Address</th><th></th></tr>
+{% for f in feeds %}
+<tr>
+  {% set path = "/feed.json" if f.name == "default" else "/f/" ~ f.name ~ ".json" %}
+  {% set lf = {} %}{% for k, v in f.filter %}{% if k == "tag" and k not in lf %}{% set _ = lf.update({k: v}) %}{% endif %}{% endfor %}
+  <td><strong>{% if f.visibility == "public" %}<a href="https://{{ slug }}.{{ base_domain }}{{ path }}" title="Open the public feed itself">{{ f.name }}</a>{% else %}<a href="/log{% if lf %}?{{ lf|urlencode }}{% endif %}" title="A private feed needs a token, so this opens it in your Log with the same filter">{{ f.name }}</a>{% endif %}</strong>{% if f.title %}<br><span class="muted">{{ f.title }}</span>{% endif %}</td>
+  <td>{% for k, v in f.filter %}<span class="chip">{{ k }}={{ v }}</span> {% else %}everything{% endfor %}</td>
+  <td>{{ f.visibility }}</td>
+  <td><code>{% if f.name == "default" %}/feed.json{% else %}/f/{{ f.name }}.json{% endif %}</code></td>
+  <td><a href="/account/feeds?edit={{ f.name }}">Edit</a>{% if f.name != "default" %}
+    <form method="post" action="/account/feeds/{{ f.name }}/delete"><button class="link" type="submit">Delete</button></form>{% endif %}</td>
+</tr>
+{% endfor %}
+</table></div>
+<p class="muted">A public feed's name opens the feed itself. A private feed needs a token, so its name opens it in your Log with the same tag filter.</p>
+<h2>{% if editing %}Edit {{ editing.name }}{% else %}New feed{% endif %}</h2>
+<form class="stack" method="post" action="/account/feeds">
+  <label for="name">Name (letters, digits, hyphens)</label>
+  <input id="name" name="name" value="{{ editing.name if editing else '' }}" {% if editing %}readonly{% endif %} maxlength="31" autocomplete="off" autocapitalize="none" required>
+  <label for="title">Title</label>
+  <input id="title" name="title" value="{{ editing.title or '' if editing else '' }}" maxlength="80" autocomplete="off">
+  {% if not editing or editing.name != "default" %}
+  <label for="tags">Tags (comma separated, all required)</label>
+  <input id="tags" name="tags" value="{{ editing.filter|selectattr(0, 'equalto', 'tag')|map(attribute=1)|join(', ') if editing else '' }}" autocomplete="off">
+  <label for="status">Status</label>
+  <select id="status" name="status"><option value="">Any (default)</option><option value="open">open</option><option value="closed">closed</option><option value="none">no status</option></select>
+  <label for="within">Within (for example 7d)</label>
+  <input id="within" name="within" autocomplete="off">
+  {% endif %}
+  <label for="visibility">Visibility</label>
+  <select id="visibility" name="visibility"><option value="private" {% if not editing or editing.visibility == "private" %}selected{% endif %}>Private (token required)</option><option value="public" {% if editing and editing.visibility == "public" %}selected{% endif %}>Public (anyone, public-labeled events only)</option></select>
+  <div class="actions"><button type="submit">Save feed</button></div>
+</form>
+{% endblock %}

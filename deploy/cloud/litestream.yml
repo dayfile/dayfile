@@ -1,0 +1,18 @@
+# Continuous replication of every tenant database (see docs/CLOUD.md).
+# Litestream watches the tenant root and starts replicating each new tenants/<slug>/dayfile.db.
+# Directory syntax: https://litestream.io/guides/directory/ (recheck against your version).
+# Nightly full backups (backup-tenants.sh) stay in place as an independent second copy.
+access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+
+dbs:
+  - dir: /data/tenants
+    pattern: dayfile.db
+    recursive: true   # the replica path gains <slug>/dayfile.db, one prefix per tenant
+    watch: true       # pick up tenants created while running
+    replica:
+      type: s3
+      endpoint: ${LITESTREAM_ENDPOINT}   # e.g. https://nyc3.digitaloceanspaces.com
+      bucket: ${LITESTREAM_BUCKET}
+      path: tenants
+      retention: 168h

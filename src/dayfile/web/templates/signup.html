@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Create your account · dayfile{% endblock %}
+{% block main %}
+<h1>Almost there, {{ login }}</h1>
+<p class="lede">One more step: accept the terms and your log is yours.{% if not open_signup %} dayfile is invite-only for now, so enter the invite code you were given.{% endif %}</p>
+<div class="notice"><strong>Beta.</strong> dayfile is free while we build it. Things will change, may break, and data may be reset. Keep your own copy of anything important.</div>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<form class="stack" method="post" action="/signup">
+  {% if not open_signup %}<label for="invite">Invite code</label>
+  <input id="invite" name="invite" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" required>{% endif %}
+  <p class="check"><label><input type="checkbox" name="terms" value="yes" required> I accept the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a> (both are drafts).</label></p>
+  <div class="actions"><button type="submit">Create account</button></div>
+</form>
+<p class="muted">Signed in with GitHub as {{ login }}. We keep only your GitHub id and login.</p>
+{% endblock %}

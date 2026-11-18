@@ -1,0 +1,71 @@
+#cloud-config
+# Droplet user data for the managed-service host (Debian 13). It prepares the machine only:
+# no secrets, no repository checkout, nothing started. Put your SSH public key below first.
+# After boot: add a read-only GitHub deploy key, clone the repo, fill in .env (see README.md).
+
+users:
+  - name: dayfile
+    groups: [sudo, docker]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - __SSH_PUBLIC_KEY__
+
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - fail2ban
+  - git
+  - rclone
+  - sqlite3
+  - ufw
+  - unattended-upgrades
+  - docker.io
+  - docker-compose
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-dayfile.conf
+    permissions: "0644"
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  - path: /etc/fail2ban/jail.d/dayfile.local
+    permissions: "0644"
+    content: |
+      [sshd]
+      enabled = true
+      maxretry = 5
+      bantime = 1h
+
+runcmd:
+  # Swap: the cheapest plans have 512 MiB to 1 GiB of RAM.
+  - fallocate -l 1G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  # Firewall: SSH, HTTP (ACME and redirect) and HTTPS only.
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+  - systemctl restart ssh
+  - systemctl enable --now fail2ban docker
+  # Tenant data, owned by the container's user (uid 10001). Operator reads it as root or via sudo.
+  - mkdir -p /srv/dayfile/tenants
+  - chown 10001:10001 /srv/dayfile/tenants
+  - chmod 700 /srv/dayfile/tenants

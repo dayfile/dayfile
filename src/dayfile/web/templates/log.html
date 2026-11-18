@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ slug }} · dayfile{% endblock %}
+{% block head %}<meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false,"selfRequestsOnly":true}'>{% endblock %}
+{% block main %}
+<div class="bar">
+  <h1>{{ slug }}</h1>
+  {% if nav_state == "account" %}<a class="button" id="post-open" href="/log/post">Post</a>{% else %}<form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form>{% endif %}
+</div>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+{% if capacity == "full" %}<div class="notice error" role="alert"><strong>This log is full</strong>, so new events are refused. Reading and downloading still work. <a href="/account/settings">Download it and start a fresh log</a>, or write to <a href="mailto:team@dayfile.app">team@dayfile.app</a> for more room.</div>
+{% elif capacity == "near" %}<div class="notice">This log is nearly full. <a href="/account/settings">See usage in Settings</a>; once it is full, new events are refused.</div>{% endif %}
+{% if filters.errors %}<div class="notice">Ignored an invalid filter ({{ filters.errors|join(", ") }}).</div>{% endif %}
+{% with action = "/log" %}{% include "_filters.html" %}{% endwith %}
+<section id="events">
+  <h2 class="sr-only">Events</h2>
+  <div id="poller" hx-get="{{ poll_url }}" hx-trigger="every 5s" hx-swap="outerHTML"></div>
+  {% for e in events %}{% include "_event.html" %}{% endfor %}
+  {% if not events %}{% if nav_state == "account" and not filters.tags and not filters.status %}
+  <div class="first">
+    <h2>Your log is ready at {{ slug }}.{{ base_domain }}. Send the first event.</h2>
+    <ol>
+      {% if write_tokens %}
+      <li>Use a write token you already have. Its secret was shown only once when you made it, so paste it in place of <code>YOUR_TOKEN</code>:
+        <ul>{% for t in write_tokens %}<li><code>{{ t.id }}</code>{% if t.note %} ({{ t.note }}){% endif %}</li>{% endfor %}</ul>
+        <pre><code>curl -X POST https://{{ slug }}.{{ base_domain }}/events \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Hello from my first event"}'</code></pre>
+        Lost the secret? Make a new token:
+        <form method="post" action="/account/tokens"><input type="hidden" name="kind" value="write"><input type="hidden" name="expires" value="90"><input type="hidden" name="note" value="first event"><button class="ghost" type="submit">Create a new write token</button></form></li>
+      {% else %}
+      <li>Make a <strong>write token</strong>. It can only post, so it is safe to give to a script.
+        <form method="post" action="/account/tokens"><input type="hidden" name="kind" value="write"><input type="hidden" name="expires" value="90"><input type="hidden" name="note" value="first event"><button type="submit">Create a write token</button></form></li>
+      <li>Copy the <code>curl</code> command shown with it and run it in a terminal.</li>
+      {% endif %}
+      <li>The event appears right here, by itself. Or skip the token and use <strong>Post</strong> above.</li>
+    </ol>
+  </div>
+  {% else %}<p class="empty">Nothing here yet.</p>{% endif %}{% endif %}
+</section>
+{% if nav_state == "account" %}
+<dialog id="post-dialog" class="modal" aria-labelledby="post-h">
+  <h2 id="post-h">New post</h2>
+  {% with form = {}, modal = true %}{% include "_post_form.html" %}{% endwith %}
+</dialog>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/htmx.min.js" defer></script>{% if nav_state == "account" %}<script src="/static/log.js?v={{ asset_v["log.js"] }}" defer></script>{% endif %}{% endblock %}

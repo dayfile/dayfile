@@ -1,0 +1,13 @@
+<form class="filters" method="get" action="{{ action }}">
+  <div><label for="tag">Tags</label><input id="tag" name="tag" value="{{ filters.tags|join(" ") }}" maxlength="200" placeholder="work launch" autocomplete="off" spellcheck="false" aria-describedby="tag-help"></div>
+  <div><label for="status">Status</label>
+    <select id="status" name="status">
+      {% for s in statuses %}<option value="{{ s }}"{% if s == filters.status %} selected{% endif %}>{{ {"": "any", "none": "no status", "all": "any, incl. retracted"}.get(s, s) }}</option>{% endfor %}
+    </select></div>
+  {% if limits %}<div><label for="limit">Show</label>
+    <select id="limit" name="limit">
+      {% for n in limits %}<option value="{{ n }}"{% if n == filters.limit %} selected{% endif %}>{{ n }}</option>{% endfor %}
+    </select></div>{% endif %}
+  <div><button type="submit">Apply</button></div>
+  <p id="tag-help" class="muted hint">Type several tags separated by spaces to see only events that have all of them.</p>
+</form>

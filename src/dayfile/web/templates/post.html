@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Post · dayfile{% endblock %}
+{% block main %}
+<h1>New post</h1>
+<p class="lede">Add an event to your log. Only the title is required.</p>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+{% include "_post_form.html" %}
+{% endblock %}

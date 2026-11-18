@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Heartbeats · dayfile{% endblock %}
+{% block main %}
+<h1>Heartbeats</h1>
+{% include "_feedtabs.html" %}
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<p>Tell dayfile how often something should report in. If it goes quiet, a to-do tagged <code>heartbeat</code> appears in your log, and it closes itself when the source is heard from again. Anything that reads your log, such as an assistant connected over MCP, sees it as an open to-do.</p>
+{% if heartbeats %}
+<div class="scroll"><table>
+<tr><th>Name</th><th>Watching</th><th>Expected every</th><th></th></tr>
+{% for h in heartbeats %}
+<tr><td><strong>{{ h.name }}</strong></td><td>{% if h.source %}source <code>{{ h.source }}</code>{% else %}tag <code>{{ h.tag }}</code>{% endif %}</td><td>{{ h.every }}</td>
+  <td><form method="post" action="/account/heartbeats/{{ h.name }}/delete"><button class="link" type="submit">Delete</button></form></td></tr>
+{% endfor %}
+</table></div>
+{% else %}<p class="muted">No heartbeats yet.</p>{% endif %}
+<form class="stack" method="post" action="/account/heartbeats">
+  <label for="hb-name">Name</label>
+  <input id="hb-name" name="name" maxlength="31" placeholder="nightly-backup" autocomplete="off" autocapitalize="none" required>
+  <label for="hb-watch">Watch</label>
+  <select id="hb-watch" name="watch"><option value="source">A source (the name on a write token)</option><option value="tag">A tag</option></select>
+  <label for="hb-value">Source or tag name</label>
+  <input id="hb-value" name="value" maxlength="100" placeholder="backup-script" autocomplete="off" autocapitalize="none" required>
+  <label for="hb-every">Expect an event every</label>
+  <input id="hb-every" name="every" maxlength="5" placeholder="24h" autocomplete="off" required>
+  <p class="muted hint">Use minutes, hours or days: <code>30m</code>, <code>24h</code>, <code>7d</code> (5 minutes to 90 days). A short grace period is added before it counts as late. Saving a name again replaces it.</p>
+  <div class="actions"><button type="submit">Save heartbeat</button></div>
+</form>
+{% endblock %}

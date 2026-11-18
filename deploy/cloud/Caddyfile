@@ -1,0 +1,65 @@
+# Public edge for the managed service. Each tenant gets <slug>.{$DAYFILE_BASE_DOMAIN}; a certificate
+# is issued on first use, but only if dayfile confirms the tenant exists (on-demand TLS "ask").
+{
+	on_demand_tls {
+		ask http://dayfile:8000/internal/tls-ask
+	}
+}
+
+# The public site (dayfile.app) is its own app, in its own container, with no access to tenant files.
+# It sets its own Content-Security-Policy; the proxy adds only the headers every response should have.
+# The host gets its own certificate, so it does not go through the on-demand "ask" hook.
+{$DAYFILE_SITE_DOMAIN:dayfile.app} {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	encode zstd gzip
+	reverse_proxy web:8001
+
+	log {
+		output discard
+	}
+}
+
+# www sends visitors to the bare name (the tenant namespace has no www).
+www.{$DAYFILE_SITE_DOMAIN:dayfile.app} {
+	redir https://{$DAYFILE_SITE_DOMAIN:dayfile.app}{uri} permanent
+}
+
+# The bare service domain (and www) has no tenant: it serves the public /status and sends everyone else
+# to the site. Like the site host it has its own certificate, not an on-demand one.
+{$DAYFILE_BASE_DOMAIN:dayfile.cloud}, www.{$DAYFILE_BASE_DOMAIN:dayfile.cloud} {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	handle /status {
+		reverse_proxy dayfile:8000
+	}
+	handle {
+		redir https://{$DAYFILE_SITE_DOMAIN:dayfile.app} permanent
+	}
+}
+
+# Everything else is a tenant: <slug>.{$DAYFILE_BASE_DOMAIN}.
+https:// {
+	tls {
+		on_demand
+	}
+
+	# The ask hook is for Caddy only; never reachable from the internet.
+	@internal path /internal/*
+	respond @internal 404
+
+	reverse_proxy dayfile:8000
+
+	# Tokens appear in URLs, so the proxy keeps no access log.
+	log {
+		output discard
+	}
+}

@@ -1,0 +1,43 @@
+# Self-hosting with HTTPS: set DAYFILE_DOMAIN in .env next to this file, then
+#   docker compose up -d
+# Caddy obtains and renews the certificate. dayfile itself is not published on the host.
+services:
+  dayfile:
+    build: ../..
+    restart: unless-stopped
+    volumes:
+      - dayfile-data:/data
+    environment:
+      DAYFILE_AUTH_URI: ${DAYFILE_AUTH_URI:-}
+  email:
+    build: ../..
+    restart: unless-stopped
+    profiles: ["email"]          # docker compose --profile email up -d
+    command: ["dayfile", "poll-email", "--folder", "SMS"]
+    volumes:
+      - dayfile-data:/data
+    environment:
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+  notify:
+    build: ../..
+    restart: unless-stopped
+    profiles: ["notify"]         # docker compose --profile notify up -d
+    command: ["dayfile", "notify"]
+    volumes:
+      - dayfile-data:/data
+    environment:
+      NTFY_URL: ${NTFY_URL:-}
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DAYFILE_DOMAIN: ${DAYFILE_DOMAIN:?set DAYFILE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [dayfile]
+volumes:
+  dayfile-data:
+  caddy-data:

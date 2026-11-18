@@ -1,0 +1,7 @@
+[Unit]
+Description=dayfile: permanently remove deleted logs held for 30 days
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker compose -f /home/dayfile/dayfile/deploy/cloud/compose.yaml exec -T dayfile dayfile tenant purge --older-than-days 30

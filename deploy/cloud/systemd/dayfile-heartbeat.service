@@ -1,0 +1,11 @@
+[Unit]
+Description=dayfile: check heartbeats and write events for sources that went quiet
+After=docker.service
+
+[Service]
+Type=oneshot
+# Optional: HEARTBEAT_PING_URL=... in /etc/dayfile/heartbeat.env (pinged after each good run, so a
+# healthchecks.io check with a short period notices when the checker itself stops).
+EnvironmentFile=-/etc/dayfile/heartbeat.env
+ExecStart=/usr/bin/docker compose -f /home/dayfile/dayfile/deploy/cloud/compose.yaml exec -T dayfile dayfile heartbeat check
+ExecStartPost=-/bin/sh -c '[ -z "$$HEARTBEAT_PING_URL" ] || curl -fsS --max-time 10 "$$HEARTBEAT_PING_URL" >/dev/null'

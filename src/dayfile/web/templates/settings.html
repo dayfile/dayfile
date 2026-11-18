@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Settings · dayfile{% endblock %}
+{% block main %}
+<h1>Settings</h1>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<h2>Account management</h2>
+<p>Signed in with GitHub as <strong>{{ login }}</strong>.</p>
+<form method="post" action="/account/logout"><div class="actions"><button class="ghost" type="submit">Sign out</button></div></form>
+<h3>Username</h3>
+<p>Your username and your log are one and the same: <strong><code>{{ slug }}.{{ base_domain }}</code></strong>. Feeds live under it at <code>/f/&lt;name&gt;</code>.</p>
+<p>Renaming changes the address at once. Anything using the old address, such as saved feed URLs, stops working; tokens keep working on the new one. The old name stays reserved for you for one day.</p>
+<form class="stack" method="post" action="/account/rename">
+  <label for="newslug">New username</label>
+  <input id="newslug" name="new_slug" value="{{ slug }}" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" required>
+  <p class="check"><label><input type="checkbox" name="understood" value="yes" required> I understand that {{ slug }}.{{ base_domain }} will stop working.</label></p>
+  <div class="actions"><button class="ghost" type="submit">Rename</button></div>
+</form>
+<h3>Account details</h3>
+<p>Everything we hold about your account, apart from your log.</p>
+<details class="account-json"><summary class="button ghost">Show my account details</summary>
+  <pre id="account-json">{{ account_json }}</pre>
+  <div class="actions"><button class="ghost" id="copy-account" type="button" hidden>Copy</button></div>
+</details>
+<h2>Log management</h2>
+<p>How full your log is, a copy of it, and a way to start over when it fills up.</p>
+{% if usage %}
+<h3>Usage</h3>
+{% macro dial(label, used, limit, text) %}
+{% set pct = ((used / limit * 100)|round|int if limit else 0) %}
+<div class="dial{% if pct >= 90 %} hot{% endif %}" role="img" aria-label="{{ label }}: {{ text }}{% if limit %}, {{ pct }} percent{% endif %}">
+  <svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="15.9155"/>{% if limit %}<circle class="fill" cx="18" cy="18" r="15.9155" stroke-dasharray="{{ [pct, 100]|min }} 100" transform="rotate(-90 18 18)"/>{% endif %}</svg>
+  <span class="pct">{% if limit %}{{ "<1" if used and not pct else pct }}%{% else %}&infin;{% endif %}</span>
+  <span class="what"><strong>{{ label }}</strong><br>{{ text }}</span>
+</div>
+{% endmacro %}
+<div class="dials">
+{{ dial("Events", usage.events, usage.max_events, usage.events ~ (" of " ~ usage.max_events if usage.max_events else "")) }}
+{% if usage.bytes is defined %}{{ dial("Storage", usage.bytes, usage.max_bytes, ((usage.bytes / 1048576)|round(1)) ~ " MB" ~ (" of " ~ ((usage.max_bytes / 1048576)|round(0)|int) ~ " MB" if usage.max_bytes else ""))}}{% endif %}
+</div>
+{% endif %}
+<h3>Download your log</h3>
+<p>Download everything in your log as a SQLite database (gzipped). You can open it with any SQLite tool.</p>
+<form method="post" action="/account/export"><div class="actions"><button class="ghost" type="submit">Download my log</button></div></form>
+<h3>Start a fresh log</h3>
+<p>A log has no way to delete single events, so when it fills up (see Usage above) the way out is a new, empty one under the same name. This erases every event, token and feed in it. Anything that posts or reads with an old token stops working until you make new ones. <strong>Download your log first.</strong></p>
+<form class="stack" method="post" action="/account/reset">
+  <label for="reset-confirm">Type your username, <strong>{{ slug }}</strong>, to confirm</label>
+  <input id="reset-confirm" name="confirm" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+  <div class="actions"><button class="ghost" type="submit">Erase it and start fresh</button></div>
+</form>
+{% if discovery or contact or answer %}
+<h2>Contact and feedback</h2>
+<p>Optional, and nothing here is needed to use dayfile. It is how we may reach you, and what you would like to tell the developer. Everything on this page is in your account download and deleted with your account.</p>
+{% endif %}
+{% if discovery %}
+{% if contact %}<p>We may email <strong>{{ contact.email }}</strong> about dayfile: service changes and one message asking how it's going. You agreed on {{ contact.consented_at[:10] }}.</p>
+<form method="post" action="/account/email"><input type="hidden" name="remove" value="yes"><div class="actions"><button class="ghost" type="submit">Remove it and stop emails</button></div></form>
+{% else %}<p>No email on file, so we will not email you.</p>{% endif %}
+<form class="stack" method="post" action="/account/contact">
+  <label for="email">{{ "Change email" if contact else "Email" }} <span class="muted">(optional)</span></label>
+  <input id="email" name="email" type="email" value="{{ contact.email if contact else "" }}" autocomplete="email" maxlength="254">
+  <p class="check"><label><input type="checkbox" name="consent" value="yes"> {{ email_consent }}</label>{% if contact %} <span class="muted">You already agreed; tick it again only if you change the address.</span>{% endif %}</p>
+  <label for="plans">What are you planning to log? <span class="muted">(optional, up to 500 characters)</span></label>
+  <textarea id="plans" name="plans" rows="3" maxlength="500">{{ answer.text if answer else "" }}</textarea>
+  <p class="muted">A line or two helps us decide what to build. We never read your log itself. Clear a box and save to remove it.</p>
+  <div class="actions"><button class="ghost" type="submit">Save</button></div>
+</form>
+{% else %}
+{% if discovery or contact %}
+<h3>Email</h3>
+{% if contact %}<p>We may email <strong>{{ contact.email }}</strong> about dayfile: service changes and one message asking how it's going. You agreed on {{ contact.consented_at[:10] }}.</p>
+<form method="post" action="/account/email"><input type="hidden" name="remove" value="yes"><div class="actions"><button class="ghost" type="submit">Remove it and stop emails</button></div></form>
+{% else %}<p>No email on file, so we will not email you.</p>{% endif %}
+{% if false %}<form class="stack" method="post" action="/account/email">
+  <label for="email">{{ "Change email" if contact else "Email" }} <span class="muted">(optional)</span></label>
+  <input id="email" name="email" type="email" value="{{ contact.email if contact else "" }}" autocomplete="email" maxlength="254" required>
+  <p class="check"><label><input type="checkbox" name="consent" value="yes" required> {{ email_consent }}</label></p>
+  <div class="actions"><button class="ghost" type="submit">Save</button></div>
+</form>{% endif %}
+{% endif %}
+{% if discovery or answer %}
+<h3>What you plan to log</h3>
+<p>{% if answer %}Your answer from {{ answer.answered_at[:10] }}. Change it, or clear the box and save to remove it.{% else %}Optional: a line or two on what you use dayfile for helps us decide what to build.{% endif %} We never read your log itself, and your answer is deleted with your account.</p>
+<form class="stack" method="post" action="/account/answer">
+  <label for="plans">Your answer <span class="muted">(optional, up to 500 characters)</span></label>
+  <textarea id="plans" name="plans" rows="3" maxlength="500">{{ answer.text if answer else "" }}</textarea>
+  <div class="actions"><button class="ghost" type="submit">Save</button></div>
+</form>
+{% endif %}
+{% endif %}
+<hr class="danger-zone">
+<h2 class="danger-title">Delete account</h2>
+<p>This erases your log at once. There is no trash and no way back. Events cannot be edited or recovered one by one, and the address <strong>{{ slug }}.{{ base_domain }}</strong> stops working. Export first if you want a copy.</p>
+<form class="stack" method="post" action="/account/delete">
+  <label for="confirm">Type your username, <strong>{{ slug }}</strong>, to confirm</label>
+  <input id="confirm" name="confirm" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+  <div class="actions"><button class="danger" type="submit">Delete my account</button></div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="/static/settings.js?v={{ asset_v["settings.js"] }}" defer></script>{% endblock %}

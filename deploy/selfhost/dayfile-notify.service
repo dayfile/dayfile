@@ -1,0 +1,15 @@
+# systemd --user unit: push urgent events to ntfy. Put NTFY_URL=https://ntfy.sh/<topic>
+# in ~/.config/dayfile/env (mode 600).
+[Unit]
+Description=dayfile ntfy notifier
+
+[Service]
+WorkingDirectory=%h/python_projects/dayfile
+Environment=DAYFILE_DB=%h/.local/share/dayfile/dayfile.db
+EnvironmentFile=%h/.config/dayfile/env
+ExecStart=/usr/bin/env uv run dayfile notify
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target

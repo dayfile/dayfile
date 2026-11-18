@@ -1,0 +1,14 @@
+[Unit]
+Description=dayfile nightly backup to encrypted object storage
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=RCLONE_CONFIG=/etc/dayfile/rclone.conf
+Environment=BACKUP_REMOTE=backup:
+Environment="DAYFILE_CMD=docker compose -f /home/dayfile/dayfile/deploy/cloud/compose.yaml exec -T dayfile dayfile"
+Environment="ACCOUNTS_CMD=docker compose -f /home/dayfile/dayfile/deploy/cloud/compose.yaml exec -T web python -m dayfile.web.admin"
+# Optional: BACKUP_PING_URL=... (a dead man's switch), BACKUP_KEEP_DAYS=...
+EnvironmentFile=-/etc/dayfile/backup.env
+ExecStart=/home/dayfile/dayfile/deploy/cloud/backup-tenants.sh

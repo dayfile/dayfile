@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 600" width="1100" height="600" font-family="Helvetica, Arial, sans-serif" role="img" aria-label="dayfile architecture">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b6785"/></marker>
+  </defs>
+  <rect width="1100" height="600" fill="#ffffff"/>
+  <text x="550" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1e2a47">dayfile architecture</text>
+
+  <!-- column headings -->
+  <g font-size="12" font-weight="700" fill="#5b6785" text-anchor="middle" letter-spacing="1">
+    <text x="105" y="76">SOURCES</text><text x="333" y="76">INGEST</text><text x="560" y="76">THE LOG</text><text x="800" y="76">PROJECTION</text><text x="1005" y="76">VIEWS</text>
+  </g>
+
+  <!-- sources -->
+  <g fill="#eef1f8" stroke="#c4cbe0">
+    <rect x="30" y="92" width="150" height="48" rx="8"/><rect x="30" y="150" width="150" height="48" rx="8"/>
+    <rect x="30" y="208" width="150" height="48" rx="8"/><rect x="30" y="266" width="150" height="48" rx="8"/>
+    <rect x="30" y="324" width="150" height="48" rx="8"/>
+  </g>
+  <g font-size="13" fill="#1e2a47" text-anchor="middle">
+    <text x="105" y="113">Gmail / Google Voice</text><text x="105" y="129" font-size="11" fill="#5b6785">IMAP IDLE</text>
+    <text x="105" y="171">Webhooks, devices</text><text x="105" y="187" font-size="11" fill="#5b6785">POST /events + write token</text>
+    <text x="105" y="229">CLI</text><text x="105" y="245" font-size="11" fill="#5b6785">dayfile add</text>
+    <text x="105" y="287">Generators</text><text x="105" y="303" font-size="11" fill="#5b6785">weather, daily digest</text>
+    <text x="105" y="345">CloudEvents</text><text x="105" y="361" font-size="11" fill="#5b6785">foreign systems</text>
+  </g>
+
+  <!-- ingest -->
+  <rect x="255" y="92" width="156" height="280" rx="10" fill="#fff6e5" stroke="#f5a524"/>
+  <g font-size="13" fill="#1e2a47" text-anchor="middle">
+    <text x="333" y="120" font-weight="700">Ingest core</text>
+    <text x="333" y="150">validate (JSON Schema)</text>
+    <text x="333" y="174">normalize timestamps</text>
+    <text x="333" y="198">default audience = self</text>
+    <text x="333" y="222">check signature</text>
+    <text x="333" y="246">bind source + labels</text>
+    <text x="333" y="270">to the write token</text>
+    <text x="333" y="302">idempotent on</text>
+    <text x="333" y="320">(source_id, source_ref)</text>
+    <text x="333" y="352" font-size="11" fill="#5b6785">one transaction per batch</text>
+  </g>
+
+  <!-- log -->
+  <rect x="470" y="92" width="180" height="280" rx="10" fill="#1e2a47"/>
+  <g font-size="13" fill="#ffffff" text-anchor="middle">
+    <text x="560" y="120" font-weight="700">SQLite event log</text>
+    <text x="560" y="144" font-size="11" fill="#c4cbe0">append-only, triggers</text>
+  </g>
+  <g fill="#ffffff">
+    <rect x="490" y="162" width="140" height="22" rx="5" fill-opacity="0.95"/><rect x="490" y="192" width="140" height="22" rx="5" fill-opacity="0.7"/>
+    <rect x="490" y="222" width="140" height="22" rx="5" fill-opacity="0.5"/><rect x="490" y="252" width="140" height="22" rx="5" fill-opacity="0.3"/>
+  </g>
+  <g font-size="11" fill="#1e2a47"><text x="500" y="177">seq 4  todo.done</text><text x="500" y="207">seq 3  note</text></g>
+  <g font-size="11" fill="#ffffff"><text x="500" y="237">seq 2  todo</text><text x="500" y="267">seq 1  weather.daily</text></g>
+  <g font-size="11" fill="#c4cbe0" text-anchor="middle">
+    <text x="560" y="304">events, tags, audience, refs</text>
+    <text x="560" y="322">UTC timestamps, one format</text>
+    <text x="560" y="340">cursor = seq, never time</text>
+  </g>
+
+  <!-- projection -->
+  <rect x="690" y="92" width="220" height="280" rx="10" fill="#eaf6ee" stroke="#7bc596"/>
+  <g font-size="13" fill="#1e2a47" text-anchor="middle">
+    <text x="800" y="120" font-weight="700">Query and fold</text>
+    <text x="800" y="150">authenticate credential</text>
+    <text x="800" y="174">filter by audience labels</text>
+    <text x="800" y="198">time release:</text>
+    <text x="800" y="214" font-size="12">visible_at ≤ now ≤ expires_at</text>
+    <text x="800" y="238">fold lifecycle edges</text>
+    <text x="800" y="254" font-size="11">open, done, superseded, retracted</text>
+    <text x="800" y="278">tag, type, status, within</text>
+    <text x="800" y="302">page by seq</text>
+    <text x="800" y="318" font-size="12">+ released_after cursor</text>
+    <text x="800" y="352" font-size="11" fill="#5b6785">Cache-Control: private, per-caller ETag</text>
+  </g>
+
+  <!-- views -->
+  <g fill="#eef1f8" stroke="#c4cbe0"><rect x="950" y="120" width="110" height="46" rx="8"/><rect x="950" y="186" width="110" height="46" rx="8"/><rect x="950" y="252" width="110" height="46" rx="8"/></g>
+  <g font-size="13" fill="#1e2a47" text-anchor="middle"><text x="1005" y="148">JSON Feed</text><text x="1005" y="214">Atom</text><text x="1005" y="280">CloudEvents</text></g>
+
+  <!-- arrows -->
+  <g stroke="#5b6785" stroke-width="2" fill="none" marker-end="url(#a)">
+    <path d="M182 232 H252"/><path d="M413 232 H467"/>
+    <path d="M912 143 H947"/><path d="M912 209 H947"/><path d="M912 275 H947"/>
+  </g>
+  <path d="M688 232 H653" stroke="#5b6785" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="670" y="224" font-size="10" fill="#5b6785" text-anchor="middle">reads</text>
+  <text x="332" y="224" font-size="10" fill="#5b6785" text-anchor="middle" display="none">.</text>
+
+  <!-- lower band -->
+  <rect x="30" y="410" width="1040" height="150" rx="12" fill="#f7f8fc" stroke="#e1e5f0"/>
+  <text x="50" y="436" font-size="12" font-weight="700" fill="#5b6785" letter-spacing="1">AROUND THE LOG</text>
+
+  <g font-size="13" fill="#1e2a47">
+    <rect x="50" y="452" width="270" height="90" rx="8" fill="#ffffff" stroke="#c4cbe0"/>
+    <text x="64" y="476" font-weight="700">Notifier</text>
+    <text x="64" y="496" font-size="12">urgency ≥ 2 events that just became visible</text>
+    <text x="64" y="513" font-size="12">are pushed once (deliveries table), never replayed</text>
+    <text x="64" y="530" font-size="11" fill="#5b6785">ntfy (optional)</text>
+
+    <rect x="340" y="452" width="270" height="90" rx="8" fill="#ffffff" stroke="#c4cbe0"/>
+    <text x="354" y="476" font-weight="700">Tokens and keys</text>
+    <text x="354" y="496" font-size="12">read tokens: audience labels, expiry, revoke</text>
+    <text x="354" y="513" font-size="12">write tokens: allowed sources, rate limit</text>
+    <text x="354" y="530" font-size="11" fill="#5b6785">only sha256 stored; Ed25519 public keys</text>
+
+    <rect x="630" y="452" width="420" height="90" rx="8" fill="#ffffff" stroke="#c4cbe0"/>
+    <text x="644" y="476" font-weight="700">Consumers</text>
+    <text x="644" y="496" font-size="12">feed readers and scripts poll a /t/&lt;token&gt;/ URL</text>
+    <text x="644" y="513" font-size="12">followers resume with since_seq + released_after</text>
+    <text x="644" y="530" font-size="11" fill="#5b6785">log redacts tokens from access logs</text>
+  </g>
+</svg>

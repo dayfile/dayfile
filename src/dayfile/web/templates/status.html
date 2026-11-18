@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Status · dayfile{% endblock %}
+{% block description %}Whether dayfile.app and the dayfile API are up right now, with 90 days of uptime measured independently.{% endblock %}
+{% macro bars(days) %}<div class="bars" role="img" aria-label="Daily availability for the last 90 days">{% for d in days %}<i class="{{ d.state }}" title="{{ d.day }}: {{ d.pct ~ '%' if d.pct is not none else 'no data' }}"></i>{% endfor %}</div>
+<p class="bars-key"><span>90 days ago</span><span>Today</span></p>{% endmacro %}
+{% macro pct(v) %}{{ (v ~ '%') if v is not none else 'n/a' }}{% endmacro %}
+{% block main %}
+<h1>Status</h1>
+{% if all_ok %}<div class="notice" role="status"><strong>All systems operational.</strong></div>
+{% else %}<div class="notice error" role="alert"><strong>Something is down.</strong> We are alerted automatically and are looking.</div>{% endif %}
+<ul class="status">
+{% for name, state in parts %}<li><span>{{ name }}</span><strong class="{{ 'up' if state == 'ok' else 'down' }}">{{ 'Operational' if state == 'ok' else 'Down' }}</strong></li>
+{% endfor %}</ul>
+<p>Checked {{ checked|stamp }}. Reload to check again.</p>
+
+{% if robot %}
+<h2>Uptime, measured independently</h2>
+{% for m in robot.monitors %}
+<h3>{{ m.name }} <small class="{{ 'up' if m.up else 'down' }}">{{ 'up' if m.up else 'down' }}</small></h3>
+<ul class="uptime">{% for days, label in ((1, "24 hours"), (7, "7 days"), (30, "30 days"), (90, "90 days")) %}
+<li><strong>{{ pct(m.uptime[days]) }}</strong><span>{{ label }}</span></li>{% endfor %}</ul>
+{{ bars(m.days) }}
+{% endfor %}
+<h2>Past incidents</h2>
+{% if robot.incidents %}<ul class="incidents">{% for i in robot.incidents %}<li><span>{{ i.start|stamp }} &middot; {{ i.name }}</span><strong>down about {{ i.minutes }} min</strong></li>{% endfor %}</ul>
+{% else %}<p>No incidents recorded.</p>{% endif %}
+<h2>How this is measured</h2>
+<p>These figures come from <a href="https://uptimerobot.com" rel="noopener noreferrer">UptimeRobot</a>, an independent monitoring service. It requests our public addresses over the internet every 5 minutes, from outside our servers, the way a visitor would, and we only read its record. We do not edit it. A check that fails or times out counts as downtime, so outages shorter than 5 minutes may not show. Days are UTC.{% if status_page_url %} You can see the same data on <a href="{{ status_page_url }}" rel="noopener noreferrer">UptimeRobot's own status page</a>, which stays up even if our servers do not.{% endif %}</p>
+<p class="muted">Monitoring by <a href="https://uptimerobot.com" rel="noopener noreferrer">UptimeRobot</a>.</p>
+{% elif history %}
+<h2>Uptime</h2>
+<ul class="uptime">{% for days, label in ((1, "24 hours"), (7, "7 days"), (30, "30 days"), (90, "90 days")) %}
+<li><strong>{{ pct(history.uptime[days]) }}</strong><span>{{ label }}</span></li>{% endfor %}</ul>
+{{ bars(history.days) }}
+<h2>Past incidents</h2>
+{% if history.incidents %}<ul class="incidents">{% for i in history.incidents %}<li><span>{{ i.start|stamp }}</span><strong>about {{ i.minutes }} min</strong></li>{% endfor %}</ul>
+{% else %}<p>No incidents in the last 90 days.</p>{% endif %}
+<p class="muted">This is an internal check: our own server probes our API once a minute. It cannot see problems on the way to us, and it records nothing while the site itself is down.</p>
+{% endif %}
+
+<h2>For programs</h2>
+<p><code>GET https://dayfile.cloud/status</code> returns JSON about the whole service, not any one log, with HTTP 200 when all is well and 503 when not.</p>
+<pre>{"status": "ok", "components": {"api": "ok", "storage": "ok"}, "checked_at": "2026-11-14T12:00:00Z"}</pre>
+<p>Questions? <a href="mailto:team@dayfile.app">team@dayfile.app</a>.</p>
+{% endblock %}

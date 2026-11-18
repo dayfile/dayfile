@@ -1,0 +1,80 @@
+[project]
+name = "dayfile"
+version = "0.1.0"
+description = "A personal, append-only event log exposed as feed views."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "dayfile", email = "team@dayfile.app" }]
+keywords = ["event-log", "append-only", "atom", "json-feed", "sqlite", "self-hosted", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP",
+]
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+dependencies = [
+    "cryptography>=50.0.2",
+    "fastapi>=0.162.0",
+    "jsonschema>=4.21",
+    "rfc8785>=0.1.4",
+    "uvicorn>=0.54.0",
+]
+
+[project.urls]
+Homepage = "https://dayfile.app"
+Source = "https://github.com/dayfile/dayfile"
+Issues = "https://github.com/dayfile/dayfile/issues"
+Changelog = "https://github.com/dayfile/dayfile/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+# The dayfile.app web app (src/dayfile/web). The API and CLI do not need these.
+web = [
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.33",
+]
+mcp = [
+    "mcp>=2.3",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "mcp>=2.3",
+    "python-multipart>=0.0.33",
+    "pytest>=8",
+    "pyyaml>=6.0.3",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dayfile"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"schema.sql" = "dayfile/schema.sql"
+"schema/event.schema.json" = "dayfile/event.schema.json"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[project.scripts]
+dayfile = "dayfile.cli:main"

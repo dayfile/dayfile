@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Choose your username · dayfile{% endblock %}
+{% block main %}
+<h1>Hello, {{ login }}</h1>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<p class="lede">Choose your username. It becomes your log's address, for example <code>myname.{{ base_domain }}</code>, and your feeds live under it at <code>/f/&lt;name&gt;</code>. You get one username at a time, and you can change it later. Usernames are public: they appear in certificate records.</p>
+<form class="stack" method="post" action="/account/slug">
+  <label for="slug">Username</label>
+  <input id="slug" name="slug" placeholder="myname" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" required>
+  {% if discovery %}<label for="plans">What are you planning to log? <span class="muted">(optional)</span></label>
+  <textarea id="plans" name="plans" rows="3" maxlength="500">{{ plans }}</textarea>
+  <label for="email">Email <span class="muted">(optional)</span></label>
+  <input id="email" name="email" type="email" value="{{ email }}" autocomplete="email" maxlength="254">
+  <p class="check"><label><input type="checkbox" name="consent" value="yes"{% if consent %} checked{% endif %}> {{ email_consent }}</label></p>{% endif %}
+  <div class="actions"><button type="submit">Create my username</button></div>
+</form>
+{% endblock %}

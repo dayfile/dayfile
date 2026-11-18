@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Docs · dayfile{% endblock %}
+{% block main %}
+<h1>Docs</h1>
+<p class="lede">Everything you need to write events and read them back. A log lives at <code>https://&lt;name&gt;.dayfile.cloud</code>.</p>
+{% include "_diagram.html" %}
+<div class="notice">The service is in beta, so details may change. A log has a <strong>write token</strong> (can only post) and a <strong>read token</strong> (can only read).</div>
+
+<h2>The ideas</h2>
+<dl class="terms">
+<dt>Log</dt><dd>Your one append-only record of everything that happened, at <code>NAME.dayfile.cloud</code>. NAME is your username, so the username, the log and its address are the same thing. You get one log. Nothing in it is edited or deleted.</dd>
+<dt>Event</dt><dd>One entry in the log: a title, plus optional detail, tags and times. "Backup finished" is an event.</dd>
+<dt>Tag</dt><dd>A free label you attach to group events, such as <code>launch</code> or <code>health</code>. An event can have many tags, and you can filter by them. One tag is special: <code>todo</code>. An event tagged <code>todo</code> is a to-do: it starts open and gets a Close button. Every other event has no status.</dd>
+<dt>Feed</dt><dd>A saved filtered view of the log, for example "all events tagged <code>work</code>". Feeds hold no data of their own: the log is the single source of truth and a feed is a window onto it. Your log has a default feed, and you can add named ones at <code>/f/NAME</code>. Reading a feed in a browser, an RSS or Atom feed reader or code gives the same events.</dd>
+<dt>Live updates</dt><dd>Staying connected so new events reach you as they arrive, instead of asking again (see Staying up to date). Any feed or the whole log can be followed this way.</dd>
+<dt>Token</dt><dd>A password for one job. A <strong>write token</strong> can only add events, and can be limited to named sources. A <strong>read token</strong> can only read, limited by audience labels. Make one per script or device so you can revoke it alone.</dd>
+<dt>Audience</dt><dd>A label on an event that decides who may read it. With none, only you can (<code>self</code>). The label <code>public</code> lets a public feed show it.</dd>
+<dt>Source</dt><dd>Who sent an event, for example <code>backup-script</code>. It is how a write token is limited and how retries are recognized.</dd>
+</dl>
+
+<h2>Quick start</h2>
+<h3>Post an event</h3>
+<pre><code>curl -X POST https://NAME.dayfile.cloud/events \
+  -H "Authorization: Bearer WRITE_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"title":"Hello"}'</code></pre>
+<p>It answers <code>201</code> with the stored event. Only <code>title</code> is required. dayfile fills in the id, the time, and the source when your write token has exactly one. Each quick post is a new event. To make retries safe, send the full form with a <code>source.id</code> and <code>ref</code> (see Events): posting the same pair again returns the existing event with <code>200</code>.</p>
+<h3>Read it back</h3>
+<pre><code>curl -H "Authorization: Bearer READ_TOKEN" https://NAME.dayfile.cloud/events</code></pre>
+<p>For an RSS reader (any feed reader that understands Atom or JSON Feed) that cannot send headers, use the token in the path:</p>
+<pre><code>https://NAME.dayfile.cloud/t/READ_TOKEN/feed.json
+https://NAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
+<p class="muted">Anyone holding that URL can read the log. Treat it like a password.</p>
+
+<h2>Events</h2>
+<div class="scroll"><table>
+<tr><th>Field</th><th></th><th>Meaning</th></tr>
+<tr><td><code>specversion</code></td><td>required</td><td><code>"dayfile/1"</code></td></tr>
+<tr><td><code>id</code></td><td>required</td><td>A ULID you choose. Time-sortable, and can be made offline.</td></tr>
+<tr><td><code>source</code></td><td>required</td><td><code>{"id", "ref"}</code>. <code>id</code> names the sender; <code>ref</code> is its own identifier, used to make posting idempotent.</td></tr>
+<tr><td><code>occurred_at</code></td><td>required</td><td>When it happened. UTC, <code>YYYY-MM-DDTHH:MM:SSZ</code>.</td></tr>
+<tr><td><code>title</code></td><td>required</td><td>Plain-text headline.</td></tr>
+<tr><td><code>body</code></td><td></td><td>Plain-text detail.</td></tr>
+<tr><td><code>visible_at</code></td><td></td><td>When it appears in feeds. Defaults to <code>occurred_at</code>; a future time holds it back.</td></tr>
+<tr><td><code>expires_at</code></td><td></td><td>When it stops appearing in feeds.</td></tr>
+<tr><td><code>tags</code>, <code>urgency</code></td><td></td><td>Flat strings (<code>fleet/anomaly</code> is just a convention); urgency 0 to 3. The tag <code>todo</code> makes the event a to-do with a status.</td></tr>
+<tr><td><code>payload</code></td><td></td><td>A JSON object of your own data. dayfile stores it and passes it along but does not check its shape; agree the shape with whatever reads it.</td></tr>
+<tr><td><code>refs</code>, <code>links</code></td><td></td><td><code>[{rel, id}]</code> and <code>[{rel, href}]</code>.</td></tr>
+<tr><td><code>audience</code></td><td></td><td>Labels that decide who may read it. Missing means <code>["self"]</code>.</td></tr>
+</table></div>
+<p>The server adds <code>seq</code> (the event's position in the log) and <code>recorded_at</code>. You can post one event or a JSON array of them; if any event is malformed, none is written.</p>
+
+<h2>Reading with filters</h2>
+<p>These work on <code>/events</code>, <code>/feed.json</code> and <code>/feed.atom</code>:</p>
+<div class="scroll"><table>
+<tr><td><code>tag=a&amp;tag=b</code></td><td>Events with all the tags (<code>tag_any=</code> for any).</td></tr>
+<tr><td><code>status=open</code></td><td><code>open</code> (a <code>todo</code> not yet closed), <code>closed</code>, <code>superseded</code>, <code>retracted</code> or <code>none</code> (an ordinary event with no status). The default shows open, closed and none (not retracted or replaced).</td></tr>
+<tr><td><code>within=7d</code></td><td>Became visible in the last N minutes, hours or days (<code>m</code>, <code>h</code>, <code>d</code>).</td></tr>
+<tr><td><code>limit=N</code></td><td>Page size. Default 50, at most 200.</td></tr>
+<tr><td><code>since_seq=N</code></td><td>Only events after position N. Page with this, never with timestamps.</td></tr>
+</table></div>
+<p><code>GET /events/{id}</code> returns one event. <code>/events</code> returns <code>{"events": [...], "cursor": N, "released_cursor": T, "next": url or null}</code>, oldest first.</p>
+
+<h2>Endpoints at a glance</h2>
+<div class="scroll"><table>
+<tr><th>Request</th><th>Token</th><th>What it does</th></tr>
+<tr><td><code>POST /events</code></td><td>write</td><td>Add one event or a list of events.</td></tr>
+<tr><td><code>GET /events</code></td><td>read</td><td>List events with filters (see above).</td></tr>
+<tr><td><code>GET /events/{id}</code></td><td>read</td><td>One event.</td></tr>
+<tr><td><code>GET /usage</code></td><td>read</td><td>How full your log is: events and bytes used, your limits, and the write rate.</td></tr>
+<tr><td><code>GET /events/stream</code></td><td>read</td><td>Live updates (Server-Sent Events).</td></tr>
+<tr><td><code>GET /feed.json</code>, <code>/feed.atom</code></td><td>read</td><td>The default feed.</td></tr>
+<tr><td><code>GET /f/NAME.json</code>, <code>.atom</code></td><td>read, or none if public</td><td>A named feed.</td></tr>
+<tr><td><code>GET /t/TOKEN/feed.json</code> and <code>/t/TOKEN/f/NAME.json</code></td><td>in the path</td><td>The same feeds, for readers that cannot send headers.</td></tr>
+<tr><td><code>/mcp</code></td><td>read, and optionally write</td><td>The assistant connection, described below.</td></tr>
+</table></div>
+<p>Make tokens under <strong>Tokens</strong> in the web app (choose read or write, a source name for write tokens, and an expiry; the secret is shown once) and named feeds under <strong>Feeds</strong>.</p>
+
+<h2>Feeds, private and public</h2>
+<p>Your log has a default feed at <code>/feed.json</code> (or <code>.atom</code>) and you can add named feeds, each a saved filter:</p>
+<pre><code>https://NAME.dayfile.cloud/f/work.json
+https://NAME.dayfile.cloud/f/work.atom
+https://NAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, for feed readers)</code></pre>
+<p>A feed without a suffix (<code>/f/work</code>) answers with JSON Feed. A named feed's filter is fixed: the URL accepts only paging (<code>limit</code>, <code>since_seq</code>).</p>
+<p>A feed is <strong>private</strong> by default and needs a read token. Make it <strong>public</strong> and anyone can read it with no token, read only. A public feed shows only events that match its filter <em>and</em> carry the audience label <code>public</code> (<code>"audience": ["public"]</code>), so nothing is exposed unless you marked it. Posting still needs a write token. Turning a feed private stops it at once, though copies other people already made may remain.</p>
+
+<h2>Know when something goes quiet</h2>
+<p>A job that fails loudly is easy to notice. One that silently stops running is not. A <strong>heartbeat</strong> says how often a source (the name on a write token) or a tag should appear in your log, for example "<code>backup-script</code> every <code>24h</code>". Set them under <a href="/account/feeds/heartbeats">Feeds, Heartbeats</a>.</p>
+<p>When nothing arrives for the interval plus a short grace period, dayfile adds an ordinary event to your log: a to-do tagged <code>todo</code> and <code>heartbeat</code>, urgency 2, titled like "nightly-backup: nothing from backup-script in 1 day". When the source reports again, dayfile closes that to-do itself. Because it is a normal open to-do, you see it in the Log, in a feed (for example one filtered on the tag <code>heartbeat</code> with status open) and through an assistant connected over MCP, which can ask for open events tagged <code>heartbeat</code>. Checks run every minute.</p>
+
+<h2>Recipes</h2>
+<h3>Cron or any shell script</h3>
+<pre><code>0 3 * * * backup.sh &amp;&amp; \
+  curl -fsS -X POST https://NAME.dayfile.cloud/events \
+    -H "Authorization: Bearer $DAYFILE_WRITE_TOKEN" -H "content-type: application/json" \
+    -d '{"title":"Nightly backup finished","tags":["backup"]}'</code></pre>
+<p>To record failures too, post a second event on the other branch: <code>|| curl ... -d '{"title":"Nightly backup FAILED","tags":["backup","alert"],"urgency":2}'</code>.</p>
+<h3>Python</h3>
+<pre><code>import json, os, urllib.request
+
+def log(title, **fields):
+    req = urllib.request.Request(
+        "https://NAME.dayfile.cloud/events",
+        json.dumps({"title": title, **fields}).encode(),
+        {"Authorization": "Bearer " + os.environ["DAYFILE_WRITE_TOKEN"],
+         "content-type": "application/json"},
+    )
+    return json.load(urllib.request.urlopen(req, timeout=10))
+
+log("Deployed v1.8", tags=["deploy"])</code></pre>
+<h3>GitHub Actions</h3>
+<p>Store a write token as a repository secret named <code>DAYFILE_WRITE_TOKEN</code>, then add a step:</p>
+{% raw %}<pre><code>- name: Tell dayfile
+  if: always()
+  run: |
+    curl -fsS -X POST https://NAME.dayfile.cloud/events \
+      -H "Authorization: Bearer ${{ secrets.DAYFILE_WRITE_TOKEN }}" \
+      -H "content-type: application/json" \
+      -d "{\"title\":\"${{ github.workflow }} ${{ job.status }}\",\"tags\":[\"ci\"]}"</code></pre>{% endraw %}
+<h3>n8n, Zapier and other automation tools</h3>
+<p>Use an HTTP Request step: method <code>POST</code>, URL <code>https://NAME.dayfile.cloud/events</code>, a header <code>Authorization: Bearer WRITE_TOKEN</code>, and a JSON body such as <code>{"title": "New order", "tags": ["shop"]}</code>. Any tool that can send a webhook with a header can post.</p>
+<p class="muted">Put the token in the tool's secret store, not in the workflow text. Give each job its own write token and source name so you can tell them apart and revoke one without touching the rest.</p>
+
+<h2>Changing your mind</h2>
+<p>Events are never edited. A later event points back at the earlier one through <code>refs</code>:</p>
+<ul>
+<li><code>completes</code> marks it <strong>closed</strong>. A closing event can leave out <code>title</code> and inherits the original's.</li>
+<li><code>supersedes</code> replaces it with a newer version.</li>
+<li><code>retracts</code> hides it. Retracting the retraction brings it back.</li>
+<li><code>replies-to</code> only threads.</li>
+</ul>
+<p>A reference only takes effect when the event carrying it comes from the same source as its target, or the two share an audience label.</p>
+<h3>If you posted a secret</h3>
+<p>Retracting hides an event from the normal views, but it stays in the log and in exports. So first <strong>revoke or rotate the secret itself</strong> (the password, key or token that was posted); treat it as exposed. Then, if you want it gone from dayfile, use <em>Start a fresh log</em> in Settings, which erases the whole log. Download it first if you want to keep the rest.</p>
+
+<h2>Staying up to date</h2>
+<ul>
+<li><strong>Long-poll:</strong> <code>GET /events?since_seq=N&amp;wait=30</code> waits up to 30 seconds for something new and returns an empty page if nothing comes.</li>
+<li><strong>Stream:</strong> <code>GET /events/stream</code> sends Server-Sent Events and closes after 300 seconds, so reconnect with <code>Last-Event-ID</code>. A browser's <code>EventSource</code> cannot send an <code>Authorization</code> header; use <code>fetch</code> with a streaming body.</li>
+<li>To catch events released late, keep <code>cursor</code> and <code>released_cursor</code> from each response and send them back as <code>since_seq</code> and <code>released_after</code>.</li>
+</ul>
+
+<h2>Connect an AI assistant (MCP)</h2>
+<p>Your log speaks <strong>MCP</strong> (the Model Context Protocol), so assistants such as Claude can list your events, add one, close a to-do and retract a mistake.</p>
+<ul>
+<li><strong>In Claude:</strong> open <em>Customize</em>, then <em>Connectors</em>, then <em>Add custom connector</em>. Enter <code>https://&lt;you&gt;.{{ base_domain }}/mcp</code> and press <em>Connect</em>. You sign in with GitHub and choose whether the assistant may write or only read.</li>
+<li><strong>In Claude Code:</strong> <code>claude mcp add --transport http dayfile https://&lt;you&gt;.{{ base_domain }}/mcp</code>, then run <code>/mcp</code> to sign in.</li>
+<li><strong>With tokens instead:</strong> send <code>Authorization: Bearer &lt;read&gt;~&lt;write&gt;</code>, a read token and a write token joined with a tilde. Leave out the tilde and the write token for read-only access.</li>
+<li><strong>Locally:</strong> <code>pip install "dayfile[mcp]"</code> adds the <code>dayfile mcp</code> command, which uses <code>DAYFILE_URL</code>, <code>DAYFILE_READ_TOKEN</code> and <code>DAYFILE_WRITE_TOKEN</code>.</li>
+</ul>
+<p>Apps you connect by signing in are listed under <a href="/account/tokens">Tokens</a>, where you can disconnect them at any time.</p>
+
+<h2>Limits</h2>
+<ul>
+<li><strong>Writes:</strong> 60 events per minute per write token on dayfile.app (self-hosted default: 600).</li>
+<li><strong>Reads:</strong> 300 requests per minute per read token, and at most 8 open streams or long-polls per token. Public feeds read without a token share 120 requests a minute per log.</li>
+<li><strong>Size of a log:</strong> 50,000 events and 25 MB of storage on the beta plan. A write past either is refused with <code>403</code> (<code>event quota exceeded</code> or <code>storage quota exceeded</code>); reading and exporting keep working. Events can't be deleted one by one, so when a log is full, download it and use <em>Start a fresh log</em> in Settings, or write to <code>team@dayfile.app</code> for more room.</li>
+<li><strong>Request size:</strong> a request body is at most 1 MiB.</li>
+<li>Beyond a rate limit you get <code>429</code> with <code>Retry-After</code>, and nothing is written.</li>
+</ul>
+
+<h2>Errors</h2>
+<div class="scroll"><table>
+<tr><td><code>401</code></td><td>No token, or one that is unknown, expired or revoked. These look the same on purpose.</td></tr>
+<tr><td><code>403</code></td><td>The token is real but not allowed to do that: a read token posting, a write token reading, a source it may not use, a suspended log, or a log over its event or storage limit.</td></tr>
+<tr><td><code>404</code></td><td>No such log or event.</td></tr>
+<tr><td><code>409</code></td><td>The <code>id</code> is already used by a different event.</td></tr>
+<tr><td><code>422</code></td><td>The event is not valid. The message says why.</td></tr>
+<tr><td><code>429</code></td><td>Over a rate limit. Wait <code>Retry-After</code> seconds.</td></tr>
+</table></div>
+
+<h2>Keeping tokens safe</h2>
+<p>Only a hash of each token is stored, so a lost token cannot be shown again; ask for a new one. The sign-in page on this site keeps your read token in a cookie that scripts cannot read and never prints it into a page.</p>
+{% endblock %}

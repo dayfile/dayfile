@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Revoke a token · dayfile{% endblock %}
+{% block main %}
+<h1>Revoke token <code>{{ token_id }}</code>?</h1>
+<p class="lede">Anything using it stops working immediately. This can't be undone; make a new token if you need one.</p>
+<form method="post" action="/account/tokens/{{ token_id }}/revoke"><div class="actions"><button type="submit">Revoke it</button> <a class="button ghost" href="/account/tokens">Cancel</a></div></form>
+{% endblock %}
