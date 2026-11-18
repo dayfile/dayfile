@@ -1,0 +1,7 @@
+{$DAYFILE_DOMAIN} {
+	reverse_proxy dayfile:8000
+	# Keep tokens out of the proxy's own access log.
+	log {
+		output discard
+	}
+}

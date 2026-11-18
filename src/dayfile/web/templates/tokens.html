@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Tokens · dayfile{% endblock %}
+{% block main %}
+<h1>Tokens</h1>
+<p class="lede">A token is a password for one job. A <strong>write</strong> token can only post events. A <strong>read</strong> token can only read.</p>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+{% if tokens %}
+<div class="scroll"><table>
+<tr><th>Id</th><th>Type</th><th>Labels</th><th>Source</th><th>Last used</th><th>Expires</th><th>Note</th><th></th></tr>
+{% for t in tokens %}
+<tr><td><code>{{ t.id }}</code></td><td>{{ t.kind }}</td><td>{{ t.labels|join(", ") }}</td><td>{{ t.write_sources|join(", ") }}</td><td>{{ t.last_used or "never" }}</td><td>{{ t.expires_at or "never" }}</td><td>{{ t.note or "" }}</td><td><a href="/account/tokens/{{ t.id }}/revoke">Revoke</a></td></tr>
+{% endfor %}
+</table></div>
+{% else %}<p class="muted">No tokens yet.</p>{% endif %}
+{% if connections %}
+<h2>Connected assistants</h2>
+<p class="muted">Apps you let into your log by signing in, such as Claude. They get a new short-lived token every hour; disconnecting ends them at once.</p>
+<div class="scroll"><table>
+<tr><th>App</th><th>Access</th><th>Connected</th><th>Last used</th><th></th></tr>
+{% for g in connections %}
+<tr><td>{{ g.name }}</td><td>{{ "Read and write" if g.can_write else "Read only" }}</td><td>{{ g.created_at }}</td><td>{{ g.last_used }}</td><td><form method="post" action="/account/connections/{{ g.id }}/disconnect"><button class="ghost" type="submit">Disconnect</button></form></td></tr>
+{% endfor %}
+</table></div>
+{% endif %}
+<h2>Create a token</h2>
+<form class="stack" method="post" action="/account/tokens">
+  <label for="kind">Token type</label>
+  <select id="kind" name="kind"><option value="read">Read (feed readers, scripts)</option><option value="write">Write (phone shortcuts, cron, webhooks)</option></select>
+  <label for="labels">Audience labels</label>
+  <input id="labels" name="labels" value="self" maxlength="100" autocomplete="off">
+  <p class="muted hint">Which events this token can see or write. <code>self</code> is your private log. Leave it as it is unless you have set up other labels.</p>
+  <div id="source-field" hidden>
+    <label for="source">Source name</label>
+    <input id="source" name="source" value="{{ slug }}" maxlength="100" autocomplete="off">
+    <p class="muted hint">A name for whatever will post with this token, such as <code>phone</code> or <code>backup-script</code>. Every event it writes is stamped with it, so you can tell where an event came from. Events can be closed or replaced only by the same source or one sharing an audience label. If unsure, leave it as it is.</p>
+  </div>
+  <label for="expires">Expires</label>
+  <select id="expires" name="expires"><option value="30">in 30 days</option><option value="90">in 90 days</option><option value="365" selected>in 1 year</option></select>
+  <label for="note">Note</label>
+  <input id="note" name="note" placeholder="for my phone" maxlength="80" autocomplete="off">
+  <div class="actions"><button type="submit">Create token</button></div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="/static/tokens.js?v={{ asset_v["tokens.js"] }}" defer></script>{% endblock %}

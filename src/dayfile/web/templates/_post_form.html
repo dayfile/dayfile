@@ -1,0 +1,10 @@
+<form class="stack" method="post" action="/log/post">
+  <label for="p-title">Title</label>
+  <input id="p-title" name="title" value="{{ form.title or "" }}" maxlength="300" placeholder="What happened?" autocomplete="off" required>
+  <label for="p-body">Details <span class="muted">(optional)</span></label>
+  <textarea id="p-body" name="body" rows="4" maxlength="20000">{{ form.body or "" }}</textarea>
+  <label for="p-tags">Tags <span class="muted">(optional, separated by spaces or commas)</span></label>
+  <input id="p-tags" name="tags" value="{{ form.tags or "" }}" maxlength="200" placeholder="work launch" autocomplete="off" spellcheck="false">
+  <p class="muted">Add the tag <code>todo</code> to make this a to-do: it starts open and gets a Close button. Without it the entry is a plain note with no status.</p>
+  <div class="actions"><button type="submit">Post</button>{% if modal %}<button class="ghost" type="button" data-close>Cancel</button>{% endif %}</div>
+</form>

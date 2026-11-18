@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Signed in · dayfile{% endblock %}
+{% block head %}<meta http-equiv="refresh" content="0; url={{ next }}">{% endblock %}
+{% block main %}
+<h1>Signed in</h1>
+<p class="lede"><a href="{{ next }}">Continue</a></p>
+{% endblock %}

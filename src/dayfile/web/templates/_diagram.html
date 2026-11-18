@@ -1,0 +1,36 @@
+<figure class="diagram">
+<svg viewBox="0 0 560 548" role="img" aria-labelledby="dg-t dg-d">
+  <title id="dg-t">How a log, tokens and feeds fit together</title>
+  <desc id="dg-d">Scripts, email, devices and agents add events to your log using a write token, which can only add. The log keeps every event in order. Feeds are saved views of the log. The default feed shows everything and the work feed shows events tagged work; both are read through a read token, by a feed reader and by your own code. The blog feed shows only public events and anyone can read it without a token.</desc>
+  <defs><marker id="dg-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="dg-head"/></marker></defs>
+
+  <g class="dg-box"><rect x="16" y="8" width="120" height="40" rx="8"/><rect x="152" y="8" width="120" height="40" rx="8"/><rect x="288" y="8" width="120" height="40" rx="8"/><rect x="424" y="8" width="120" height="40" rx="8"/></g>
+  <g class="dg-t dg-c"><text x="76" y="34">script</text><text x="212" y="34">email</text><text x="348" y="34">device</text><text x="484" y="34">agent</text></g>
+  <path class="dg-line" d="M76 48V72Q76 80 84 80H476Q484 80 484 72V48M212 48V80M348 48V80"/>
+  <path class="dg-line" d="M280 80V146" marker-end="url(#dg-a)"/>
+  <text class="dg-t dg-s" x="294" y="106">write token</text>
+  <text class="dg-t dg-m" x="294" y="126">can only add</text>
+
+  <rect class="dg-log" x="50" y="152" width="460" height="140" rx="12"/>
+  <text class="dg-t dg-b" x="70" y="178">Your log</text><text class="dg-t dg-m" x="150" y="178">you.dayfile.cloud</text>
+  <g class="dg-row"><rect x="70" y="190" width="420" height="22" rx="5"/><rect x="70" y="216" width="420" height="22" rx="5"/><rect x="70" y="242" width="420" height="22" rx="5"/></g>
+  <g class="dg-t dg-r"><text x="82" y="206">Backup finished</text><text x="82" y="232">Deployed v1.8 to production</text><text x="82" y="258">Renew the domain</text></g>
+  <g class="dg-t dg-m dg-r"><text x="478" y="206" text-anchor="end">now</text><text x="478" y="232" text-anchor="end">yesterday</text><text x="478" y="258" text-anchor="end">appears in 7 d</text></g>
+  <text class="dg-t dg-m dg-c" x="280" y="282">append-only: kept in order, never edited</text>
+
+  <text class="dg-t dg-s" x="92" y="328">Feeds: saved views of the log</text>
+  <text class="dg-t dg-s" x="392" y="328">Who reads them</text>
+  <path class="dg-line" d="M62 292V496Q62 504 70 504"/>
+  <path class="dg-line" d="M62 372H86" marker-end="url(#dg-a)"/><path class="dg-line" d="M62 438H86" marker-end="url(#dg-a)"/><path class="dg-line" d="M70 504H86" marker-end="url(#dg-a)"/>
+
+  <g class="dg-box"><rect x="92" y="344" width="150" height="56" rx="8"/><rect x="92" y="410" width="150" height="56" rx="8"/><rect x="92" y="476" width="150" height="56" rx="8"/>
+  <rect x="392" y="344" width="158" height="56" rx="8"/><rect x="392" y="410" width="158" height="56" rx="8"/><rect x="392" y="476" width="158" height="56" rx="8"/></g>
+  <g class="dg-t dg-b"><text x="106" y="368">default</text><text x="106" y="434">work</text><text x="106" y="500">blog</text></g>
+  <g class="dg-t dg-m"><text x="106" y="388">everything</text><text x="106" y="454">events tagged work</text><text x="106" y="520">public events only</text></g>
+  <g class="dg-t"><text x="406" y="377">your feed reader</text><text x="406" y="443">your own code</text><text x="406" y="509">anyone on the web</text></g>
+
+  <path class="dg-line" d="M244 372H388" marker-end="url(#dg-a)"/><path class="dg-line" d="M244 438H388" marker-end="url(#dg-a)"/><path class="dg-line dg-dash" d="M244 504H388" marker-end="url(#dg-a)"/>
+  <g class="dg-t dg-s dg-c"><text x="316" y="364">read token</text><text x="316" y="430">read token</text><text x="316" y="496" class="dg-n">no token</text></g>
+</svg>
+<figcaption>Anything that can make a web request adds events to your log with a <strong>write token</strong>, which can only add. A <strong>feed</strong> is a saved view of the log. A <strong>read token</strong> opens private feeds for reading only, and a public feed needs no token.</figcaption>
+</figure>

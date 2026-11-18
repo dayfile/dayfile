@@ -1,0 +1,5 @@
+htmx 2.0.4, vendored unmodified so the site loads nothing from a third party.
+Source:  https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js
+SHA-256: e209dda5c8235479f3166defc7750e1dbcd5a5c1808b7792fc2e6733768fb447 (checked by tests/test_web.py)
+License: Zero-Clause BSD (0BSD), https://github.com/bigskysoftware/htmx/blob/master/LICENSE
+To update: download the new release, replace the file, and update the hash in the test and here.

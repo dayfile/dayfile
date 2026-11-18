@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Privacy · dayfile{% endblock %}
+{% block main %}
+<h1>Privacy</h1>
+<div class="draft"><strong>Draft.</strong> This is a plain-language draft. Last updated 17 November 2026.</div>
+<p class="lede">dayfile collects as little as it can. This page says what it holds, where, and for how long.</p>
+
+<h2>What we hold</h2>
+<ul>
+<li><strong>Your log.</strong> The events you or your programs post, with their tags, links, payloads and timestamps, plus the position and time the server recorded for each.</li>
+<li><strong>Your account.</strong> When you sign in with GitHub we keep your GitHub numeric id and username, your dayfile username, when you signed up and which version of the terms you accepted. We ask GitHub for nothing else: not your email, and no access to your repositories.</li>
+<li><strong>Token records.</strong> A hash of each token, its audience labels, expiry and notes. Never the token itself.</li>
+<li><strong>Operational records.</strong> Error and health messages from the servers. The web servers do not keep access logs, and the parts of a web address that hold a token are blanked out of any log line.</li>
+</ul>
+<p>We do not hold payment details, because there is no billing yet.</p>
+
+<h2>Things you can choose to tell us</h2>
+<p>These are optional. Signing up and using dayfile never depends on them.</p>
+<ul>
+<li><strong>A contact email.</strong> If you type one and tick the box, we keep the address, the wording you agreed to and when. We may email you about changes to the service and once to ask how it is going. You can change or remove it in Settings; removing it withdraws your consent.</li>
+<li><strong>What you plan to log.</strong> A short note (up to 500 characters) you may write when you sign up. You can edit or remove it in Settings.</li>
+<li><strong>Interest in planned features.</strong> On the pricing page you can ask to be told when a feature exists. If you are signed in we keep which features and when. If you are not, we keep the feature, the time and, only if you type one and tick the box, an email address. No cookie is set, and we do not store your IP address.</li>
+</ul>
+<p>We use these to contact people who agreed and to decide what to build. The ones tied to your account are shown under Show my account details (Settings) and are deleted when you delete your account. A request made while signed out is not tied to any account; to have an address you left removed, write to <a href="mailto:team@dayfile.app">team@dayfile.app</a>.</p>
+<p>The operators count, without reading anything inside a log, how many people sign up, how many logs have received events, how many have events from more than one source and whether logs are still active. Those counts come from row counts and timestamps, not from the content of your events.</p>
+
+<h2>On this website</h2>
+<ul>
+<li>No analytics, no advertising, and nothing loaded from other sites.</li>
+<li>Cookies, set only when you sign in or are signing in, and only by this site. Scripts cannot read them and other sites cannot send them. There are no analytics or advertising cookies. They are: a session cookie (a random code that stands for your account, up to 30 days, ended earlier by 8 hours of inactivity or by signing out); a log cookie (your username and a short-lived read token, so the viewer can show your log, up to 8 hours); a posting cookie (a one-hour write token, so the Post form works); and short-lived cookies while GitHub sign-in is in progress.</li>
+<li>When you sign in, your token goes from your browser to this site, and from here to the log service on the same server, so it can check and read your log. It is not put in a page or a URL.</li>
+</ul>
+
+<h2>Where it lives</h2>
+<p>Logs are stored on servers run by DigitalOcean in the United States, which acts as our infrastructure provider. Data travels over encrypted connections.</p>
+
+<h2>Who sees it</h2>
+<p>Only the people and programs you give tokens to, and the operators of the service when needed to keep it running, to deal with abuse or a security problem, or when the law requires. We do not sell your data or use it for advertising.</p>
+<p><strong>Logs are not end-to-end encrypted.</strong> Each log is an ordinary database file on our server, and the operator can technically read any of them. We do that only for the reasons above. Our nightly backups are encrypted, but we hold the key, so that protects against someone breaking into the storage and not against us. If you need something that no one else can read, encrypt it yourself before you post it: we store whatever you send, though the title, tags and source of an event stay readable by the server.</p>
+
+<h2>How long we keep it</h2>
+<p>We keep a log until you ask us to delete it or your access ends. Deleting your account (in Settings) erases the live copy at once; our encrypted backups age out within 14 days.</p>
+
+<h2>Your choices</h2>
+<p>You can read all of your data through the feeds and the API at any time. You can correct it (by posting new events), download a full copy of your log as a SQLite file (Settings, Download my log) and delete your account (Settings, Delete account). For anything else, write to <a href="mailto:team@dayfile.app">team@dayfile.app</a>.</p>
+
+<h2>Changes</h2>
+<p>If we change this page in a way that matters, we will say so here.</p>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block mainmod %} wide home{% endblock %}
+{% block main %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Public beta &middot; open source</p>
+    <h1>One <span class="grad">log</span> for your scripts, apps&nbsp;and&nbsp;agents.</h1>
+    <p class="lede">Each one posts a short line, "Backup finished" or "Deployed v1.8", whenever something happens. See what ran, what changed and what needs attention in one timeline, in the browser, in any feed reader or from your own code. The history stays in order and is never silently rewritten.</p>
+    <div class="actions">
+      {% if nav_state %}<a class="button" href="{{ "/log" if nav_state == "log" else "/account" }}">Open your log</a>{% else %}<a class="button" href="/login">Sign in with GitHub</a>{% endif %}
+      <a class="button ghost" href="/demo">See a live example</a>
+    </div>
+    <p class="fine">Beta: free while we build it, up to 50,000 events and 25 MB per log. Expect changes, and keep your own copy of anything important.</p>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <div class="mock">
+      <div class="mock-bar"><span></span><span></span><span></span><b>you.dayfile.cloud</b></div>
+      <div class="mock-event new"><div class="meta"><i class="dot amber"></i><em>just now</em><span class="chip">alert</span><span class="chip">ops</span></div><h3>Disk at 82% on web-1</h3></div>
+      <div class="mock-event"><div class="meta"><i class="dot green"></i><em>40 min ago</em><span class="chip">deploy</span></div><h3>Deployed v1.8.2 to production</h3></div>
+      <div class="mock-event"><div class="meta"><i class="dot green"></i><em>2 h ago</em><span class="chip">backup</span></div><h3>Nightly backup finished: 12 logs, 4.1 MB</h3></div>
+      <div class="mock-event held"><div class="meta"><i class="dot grey"></i><em>appears in 7 d</em><span class="chip">todo</span></div><h3>Renew the domain</h3></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <h2>What people use it for</h2>
+  <div class="features uses">
+    <div><h3>A history of your automations</h3><p>Backups, cron jobs and scripts each post one line when they run. Open your log to see what ran, what didn't, and when.</p>
+<pre><code>curl -X POST https://you.dayfile.cloud/events \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Backup finished"}'</code></pre></div>
+    <div><h3>A deploy and incident timeline</h3><p>CI, monitors and people write to the same place, so the order of events is the story. Tag them and filter by <code>deploy</code> or <code>alert</code>.</p></div>
+    <div><h3>A feed for your agents and scripts</h3><p>Give each tool a read-only token and let it check the log: did the backup run, is anything still open? Same history, no extra database.</p></div>
+    <div><h3>Notes and to-dos, too</h3><p>Anything you want to remember goes in the same log. Tag an event <code>todo</code> to track it until you close it.</p></div>
+  </div>
+  <p class="muted">These are ways to use it, not built-in integrations: anything that can make a web request can post.</p>
+</section>
+
+<section class="band" id="how">
+  <h2>How it works</h2>
+  <p class="lede">dayfile is one private page of everything that happened, kept in order. Things you care about get written to it automatically. You read it in a browser, a feed reader or your own code.</p>
+  <p class="takeaway">Write once, then read the same history from different places.</p>
+  {% include "_diagram.html" %}
+  <ol class="steps">
+    <li><h3>Get your address</h3><p>Sign in with GitHub and pick a username. That gives you <code>you.dayfile.cloud</code>, your log.</p></li>
+    <li><h3>Make a token for each thing that writes</h3><p>A token is a password for one job. A <strong>write token</strong> can only add events, so you can give one to a script, an automation or a device. A <strong>read token</strong> can only read.</p></li>
+    <li><h3>Send events</h3><p>An event is a short note with a title: "Backup finished", "Deployed v1.8 to production". Anything that can make a web request can send one.</p></li>
+    <li><h3>Read it where you like</h3><p>Open your log here, subscribe in any RSS or Atom feed reader, or fetch it as JSON. Make a feed public to share it without a password.</p></li>
+  </ol>
+  <p class="muted">Your history is an audit trail: events are never edited. A correction, a closed to-do or a retraction is a new event that points back at the old one, so you can always see what changed and when. You can still download your whole log or delete your account from Settings.</p>
+</section>
+
+<section class="band">
+  <h2>See it in two commands</h2>
+  <div class="code-pair">
+    <div><p class="label">Write</p>
+<pre><code>curl -X POST https://you.dayfile.cloud/events \
+  -H "Authorization: Bearer $WRITE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Deployed v1.8 to production"}'</code></pre></div>
+    <div><p class="label">Read</p>
+<pre><code>curl https://you.dayfile.cloud/feed.json?tag=todo&amp;status=open \
+  -H "Authorization: Bearer $READ_TOKEN"
+
+# or subscribe in any RSS or Atom reader:
+# https://you.dayfile.cloud/t/&lt;token&gt;/feed.atom</code></pre></div>
+  </div>
+  <p class="muted">Sign in and create both tokens in a click, under Tokens. A write token can only post; a read token can only read.</p>
+  <div class="actions">{% if nav_state %}<a class="button" href="{{ "/log" if nav_state == "log" else "/account" }}">Open your log</a>{% else %}<a class="button" href="/login">Sign in with GitHub</a>{% endif %}<a class="button ghost" href="/demo">See a live example</a></div>
+</section>
+
+<section class="band">
+  <h2>Why not just a file, or a monitoring tool?</h2>
+  <div class="features">
+    <div><h3>A log file lives on one machine</h3><p>Here every machine, script and agent writes to one place, and a feed reader or another tool can read it back with a scoped token.</p></div>
+    <div><h3>Monitoring platforms can be more than you need</h3><p>No agents to install, no query language, no dashboards to build. It is a log and a few feeds, and you can export it as SQLite.</p></div>
+    <div><h3>Notes apps aren't built for every tool to write to</h3><p>dayfile has one simple endpoint that any script, device or agent can post to, and feeds that anything can read back as a timeline.</p></div>
+    <div><h3>Not a replacement for alerting</h3><p>dayfile keeps the history. It does not page you or watch your servers.</p></div>
+  </div>
+</section>
+
+<section class="band">
+  <h2>Dull on purpose</h2>
+  <div class="features">
+    <div><h3>Scoped tokens</h3><p>A write token can only post, and only as the sources you name. A read token can only read what its audience labels allow. Only a hash of each token is stored.</p></div>
+    <div><h3>Scheduled events</h3><p>An event can be written now and appear later, or stop appearing after a date.</p></div>
+    <div><h3>Plain text first</h3><p>Every event has a title, so any feed reader can show it.</p></div>
+    <div><h3>Quiet site</h3><p>No analytics, no ads, nothing loaded from other sites. A cookie is set only when you sign in.</p></div>
+  </div>
+</section>
+
+<section class="band">
+  <h2>Your data, your control</h2>
+  <div class="features">
+    <div><h3>Tokens are passwords</h3><p>A write token can only post; a read token can only read. If one leaks, revoke it in one click and it stops working at once. A token inside a feed URL gives the same access, so share it like a password.</p></div>
+    <div><h3>Private by default</h3><p>Every event is private to you until you label it public. A public feed shows only events labeled public, and making a feed private again cannot take back copies someone already fetched.</p></div>
+    <div><h3>Mistakes</h3><p>Posted something you shouldn't have? Retract it and it is hidden from dayfile's normal views, but the record stays in your log's history and in your export. Only deleting your account removes it, along with the whole log.</p></div>
+    <div><h3>Leave any time</h3><p>Download your log as a standard SQLite file from Settings, or run the same open-source code yourself.</p></div>
+  </div>
+</section>
+
+<section class="cta">
+  <h2>Start in a minute.</h2>
+  <p>Open source (AGPL-3.0). Self-host it, or use it here for free while it is in beta.</p>
+  <div class="actions">{% if nav_state %}<a class="button" href="{{ "/log" if nav_state == "log" else "/account" }}">Open your log</a>{% else %}<a class="button" href="/login">Sign in</a>{% endif %}<a class="button ghost" href="mailto:team@dayfile.app">Contact us</a></div>
+</section>
+{% endblock %}

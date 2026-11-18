@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}New token · dayfile{% endblock %}
+{% block main %}
+<h1>Your new {{ token.kind }} token</h1>
+<div class="notice">This is the only time it is shown. Copy it now and keep it somewhere safe.</div>
+<pre><code>{{ token.token }}</code></pre>
+{% if token.kind == "write" %}
+<pre><code>curl -X POST https://{{ slug }}.{{ base_domain }}/events \
+  -H "Authorization: Bearer {{ token.token }}" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Hello from my first event"}'</code></pre>
+<p>Run it, then <a href="/log">open your log</a>: the event shows up there on its own. Add <code>"tags": ["todo"]</code> to make it a to-do.</p>
+{% else %}
+<p>For a feed reader that cannot send headers, anyone with this address can read what the token allows. Treat it like a password:</p>
+<pre><code>https://{{ slug }}.{{ base_domain }}/t/{{ token.token }}/feed.atom
+https://{{ slug }}.{{ base_domain }}/t/{{ token.token }}/feed.json</code></pre>
+{% endif %}
+<p><a href="/account/tokens">Back to tokens</a></p>
+{% endblock %}

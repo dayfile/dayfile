@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Account deleted · dayfile{% endblock %}
+{% block main %}
+<h1>Your account is deleted</h1>
+<p>{% if slug %}<strong>{{ slug }}.{{ base_domain }}</strong> has stopped working and your log has been erased. {% endif %}Encrypted backup copies, which we cannot open one by one, age out within about 14 days. Your username is held for you for one day, then it can be taken by someone else.</p>
+<p>Sorry to see you go. This cannot be undone. You can sign up again with the same GitHub account at any time; it starts as a new, empty account.</p>
+{% endblock %}

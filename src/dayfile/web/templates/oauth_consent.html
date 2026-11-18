@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Connect an app · dayfile{% endblock %}
+{% block main %}
+<h1>Connect {{ client }} to your log?</h1>
+<p class="lede"><strong>{{ client }}</strong> is asking to use your log at <strong>{{ slug }}.{{ base_domain }}</strong>, as {{ login }}.</p>
+{% if local %}<div class="notice">This request comes from an app running on this computer.</div>
+{% elif not known %}<div class="notice error" role="alert"><strong>dayfile cannot verify this app.</strong> It will receive access to your log and its name can be anything. Continue only if you started this connection yourself, from an app you trust.</div>{% endif %}
+<form class="stack" method="post" action="/oauth/authorize">
+  {% for name, value in fields.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+  <fieldset class="choice">
+    <legend>What it may do</legend>
+    <p class="check"><label><input type="radio" name="access" value="write" checked> Read your events, add new ones, and close or retract them</label></p>
+    <p class="check"><label><input type="radio" name="access" value="read"> Read your events only</label></p>
+  </fieldset>
+  <p class="muted">After you choose, your browser goes back to <strong>{{ redirect_host }}</strong>. If you did not just start this from {{ client }}, choose Cancel. You can disconnect at any time under Tokens.</p>
+  <div class="actions"><button type="submit" name="decision" value="allow">Allow</button> <button class="ghost" type="submit" name="decision" value="deny">Cancel</button></div>
+</form>
+{% endblock %}

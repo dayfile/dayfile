@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Pricing · dayfile{% endblock %}
+{% block description %}dayfile is free during the beta. Paid plans will come later, and your log stays yours either way.{% endblock %}
+{% block main %}
+<h1>Pricing</h1>
+<p class="lede">dayfile is free while it is in beta.</p>
+<div class="draft"><strong>Placeholder.</strong> Paid plans are not settled yet. Nothing on this page is an offer, and the numbers below, which are also listed under <a href="/docs">Limits in the docs</a>, can change before the beta ends.</div>
+
+<h2>Beta plan: free</h2>
+<ul>
+<li>Your own log at <strong>&lt;you&gt;.dayfile.cloud</strong>, with the web app, feeds and tokens.</li>
+<li>Up to 50,000 events and 25 MB of storage per log. When a log is full, new events are refused until you start a fresh log (Settings) or ask us for more room.</li>
+<li>Up to 60 writes a minute per write token and 300 reads a minute per read token.</li>
+<li>Atom, JSON Feed and RSS feeds, and a download of your whole log as a SQLite file whenever you like.</li>
+</ul>
+{% if not home %}<p><a class="button" href="/login">Sign in with GitHub</a></p>{% endif %}
+
+{% if discovery %}
+<h2 id="roadmap">Roadmap</h2>
+<p>None of these exists yet. Tick the ones you would use and we will build the ones people ask for first.</p>
+{% if thanks %}<div class="notice" role="status">Noted. We will tell you when these exist, and only if you left an address and ticked the box.</div>{% endif %}
+{% if saved %}<div class="notice" role="status">Saved. You can change your choices here at any time.</div>{% endif %}
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<form method="post" action="/pricing/interest" class="roadmap">
+  <ul class="planned">
+  {% for key, label in features.items() %}<li><label class="check"><input type="checkbox" name="feature" value="{{ key }}"{% if key in mine %} checked{% endif %}> <span><strong>{{ label }}</strong> <span class="chip">not available yet</span></span></label></li>
+  {% endfor %}</ul>
+  {% if signed_in %}<button type="submit">Save my choices</button>
+  {% else %}<label>Email (optional) <input type="email" name="email" maxlength="254" autocomplete="email"></label>
+  <label class="check"><input type="checkbox" name="consent" value="yes"> {{ email_consent }}</label>
+  <p class="muted">Without an address we only count your choices. No cookie, and we do not keep your IP address.</p>
+  <button type="submit">Tell me when these exist</button>{% endif %}
+</form>
+{% endif %}
+
+<h2>After the beta</h2>
+<p>We plan a free tier for personal use and a paid plan with higher limits. We will announce prices here and by email to people with a log, well before anything changes. Nothing you stored will be deleted for going over a future limit without notice, and you can export your whole log at any time from Settings.</p>
+<p>dayfile is open source (AGPL-3.0), so you can also <a href="/docs">run it yourself</a> for nothing.</p>
+<p>Questions? Write to <a href="mailto:team@dayfile.app">team@dayfile.app</a>.</p>
+{% endblock %}

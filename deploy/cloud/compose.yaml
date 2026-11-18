@@ -1,0 +1,89 @@
+# Managed-service profile: one database per tenant, wildcard-style subdomains, replication.
+# Not for self-hosting a single log; see ../selfhost for that.
+#   cp .env.example .env && docker compose up -d
+#   docker compose exec dayfile dayfile tenant create acme
+# DNS: a wildcard A record  *.${DAYFILE_BASE_DOMAIN}  pointing at this host.
+# Every service rotates its own logs so they cannot fill the disk.
+x-logging: &logging
+  driver: json-file
+  options: {max-size: 10m, max-file: "3"}
+services:
+  dayfile:
+    build: ../..
+    image: dayfile:cloud
+    restart: unless-stopped
+    logging: *logging
+    # One worker: SQLite has a single writer and the write rate limit is held in memory.
+    volumes:
+      - ${TENANTS_DIR:-/srv/dayfile/tenants}:/data/tenants   # bind mount: host scripts read the same files
+      - ${BACKUP_STAGE:-/srv/dayfile/backups}:/backups       # where `tenant backup-all` stages copies for upload
+      - ${SECRETS_DIR:-/srv/dayfile/secrets}:/run/secrets:ro  # the shared admin secret (dayfile_admin)
+    environment:
+      DAYFILE_ADMIN_SECRET_FILE: /run/secrets/dayfile_admin   # absent file means no admin API
+      DAYFILE_TENANTS_DIR: /data/tenants
+      DAYFILE_BASE_DOMAIN: ${DAYFILE_BASE_DOMAIN:?set DAYFILE_BASE_DOMAIN}
+      DAYFILE_AUTH_URI: ${DAYFILE_AUTH_URI:-}
+      DAYFILE_MCP: "1"                  # /mcp on every log, for assistants that connect by URL
+      DAYFILE_OAUTH_ISSUER: https://${DAYFILE_SITE_DOMAIN:-dayfile.app}   # who signs them in
+  # dayfile.app: sign-in and the log viewer. Same image, no volumes (it cannot see tenant files), no
+  # privileges, a memory cap, and it reads logs only through the API above, by tenant name.
+  web:
+    image: dayfile:cloud
+    pull_policy: never            # built by the dayfile service above
+    restart: unless-stopped
+    logging: *logging
+    command: ["uvicorn", "dayfile.web:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers"]
+    volumes:
+      - ${ACCOUNTS_DIR:-/srv/dayfile/accounts}:/accounts            # accounts.db: the web app's own data
+      - ${SECRETS_DIR:-/srv/dayfile/secrets}:/run/secrets:ro        # the GitHub client secret, if any
+    environment:
+      DAYFILE_ACCOUNTS_DB: /accounts/accounts.db
+      DAYFILE_ADMIN_SECRET_FILE: /run/secrets/dayfile_admin
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      DAYFILE_GITHUB_SECRET_FILE: /run/secrets/github_client_secret
+      DAYFILE_API_URL: http://dayfile:8000
+      DAYFILE_UPTIMEROBOT_KEY_FILE: /run/secrets/uptimerobot_key   # absent file means the internal check
+      DAYFILE_STATUS_MONITORS: ${DAYFILE_STATUS_MONITORS:-}   # names to show; empty means all
+      DAYFILE_STATUS_PAGE_URL: ${DAYFILE_STATUS_PAGE_URL:-}
+      DAYFILE_BASE_DOMAIN: ${DAYFILE_BASE_DOMAIN:?set DAYFILE_BASE_DOMAIN}
+      DAYFILE_SITE_ORIGIN: https://${DAYFILE_SITE_DOMAIN:-dayfile.app}
+      DAYFILE_SIGNUP: ${DAYFILE_SIGNUP:-open}   # `invite` brings back the invite-code step
+      DAYFILE_DISCOVERY: ${DAYFILE_DISCOVERY:-}  # `on` asks the optional sign-up question and email (update /privacy first)
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 192m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+    depends_on: [dayfile]
+  litestream:
+    image: litestream/litestream:0.3
+    restart: unless-stopped
+    logging: *logging
+    profiles: ["replicate"]       # docker compose --profile replicate up -d
+    command: ["replicate", "-config", "/etc/litestream.yml"]
+    volumes:
+      - ${TENANTS_DIR:-/srv/dayfile/tenants}:/data/tenants   # bind mount: host scripts read the same files
+      - ./litestream.yml:/etc/litestream.yml:ro
+    environment:
+      LITESTREAM_ENDPOINT: ${LITESTREAM_ENDPOINT:-}
+      LITESTREAM_BUCKET: ${LITESTREAM_BUCKET:-}
+      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID:-}
+      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY:-}
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    logging: *logging
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    environment:
+      DAYFILE_SITE_DOMAIN: ${DAYFILE_SITE_DOMAIN:-dayfile.app}
+      DAYFILE_BASE_DOMAIN: ${DAYFILE_BASE_DOMAIN:-dayfile.cloud}
+    depends_on: [dayfile, web]
+volumes:
+  caddy-data:
