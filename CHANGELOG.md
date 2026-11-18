@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- README quick start: `dayfile add` needs `--db` to write straight into the local log.
+
 ## 0.1.0 (first public release)
 
 - A deleted account lets go of its GitHub identity, so the same GitHub account can sign up again as a new, empty account (before: "This account can't sign in", with no way back without an operator).

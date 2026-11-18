@@ -37,7 +37,7 @@ Requires Python 3.11 or newer.
 pip install dayfile            # or: uv tool install dayfile  /  pipx install dayfile
 export DAYFILE_DB=~/dayfile.db
 
-dayfile add "buy milk" --tag todo                          # write straight into the local log
+dayfile add "buy milk" --tag todo --db "$DAYFILE_DB"     # write straight into the local log
 dayfile token create --labels self                         # read token: prints the feed URLs once
 dayfile token create --labels self --write-source adapter:cli   # write token, for remote clients
 uvicorn dayfile.app:app                                    # serve on 127.0.0.1:8000
