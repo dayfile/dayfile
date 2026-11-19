@@ -94,3 +94,16 @@ def test_feed_commands_create_list_publish_and_delete(tmp_path, capsys):
     assert main(["feed", "delete", "work", "--db", db]) == 1
     assert main(["feed", "set", "Bad_Name", "--db", db]) == 1
     assert main(["feed", "set", "default", "--tag", "x", "--db", db]) == 1
+
+
+@pytest.mark.parametrize("raw", ["tok\r\n", " tok\n", "tok"])
+def test_token_env_var_loses_stray_whitespace(monkeypatch, raw):
+    monkeypatch.setenv("DAYFILE_WRITE_TOKEN", raw)
+    assert cli.env_token("DAYFILE_WRITE_TOKEN") == "tok"
+
+
+def test_blank_or_missing_token_env_var_is_none(monkeypatch):
+    monkeypatch.setenv("DAYFILE_WRITE_TOKEN", "\r\n")
+    assert cli.env_token("DAYFILE_WRITE_TOKEN") is None
+    monkeypatch.delenv("DAYFILE_WRITE_TOKEN")
+    assert cli.env_token("DAYFILE_WRITE_TOKEN") is None

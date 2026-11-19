@@ -117,15 +117,9 @@ Self-hosting the hosted endpoint: set `DAYFILE_MCP=1` (needs `dayfile[mcp]`) and
 ## Two ways to run it
 
 **Hosted:** [dayfile.app](https://dayfile.app), nothing to run: your log, feeds, tokens and MCP endpoint at `<username>.dayfile.cloud`.
-**Self-hosted:** your own server. The same code serves both; the difference is configuration.
+**Self-hosted:** your own server with one log in `$DAYFILE_DB` ([`deploy/selfhost`](https://github.com/dayfile/dayfile/blob/master/deploy/selfhost): `docker compose up` or systemd). The same code serves both. To run a multi-user service of your own, see [docs/CLOUD.md](https://github.com/dayfile/dayfile/blob/master/docs/CLOUD.md).
 
-| | Self-hosted ([`deploy/selfhost`](https://github.com/dayfile/dayfile/blob/master/deploy/selfhost)) | Managed-service profile ([`deploy/cloud`](https://github.com/dayfile/dayfile/blob/master/deploy/cloud)) |
-|---|---|---|
-| Logs | one, in `$DAYFILE_DB` | one SQLite file per tenant at `<slug>.<your-domain>` |
-| Setup | `docker compose up` or systemd | same image with `DAYFILE_TENANTS_DIR` + `DAYFILE_BASE_DOMAIN` |
-| Extras | none | suspension, quotas, per-tenant limits, tenant backups, Litestream, on-demand TLS |
-
-The web app (`src/dayfile/web`, install with `pip install "dayfile[web]"`) is a separate process that talks to the API over HTTP and has no access to tenant files. Accounts, GitHub sign-in, invite codes and the dashboard need the cloud profile (they create tenants through an admin API); the self-hosted profile runs the API, CLI and feeds, and the web app is not part of its compose file yet. Billing is not built. [docs/CLOUD.md](https://github.com/dayfile/dayfile/blob/master/docs/CLOUD.md) describes the hooks.
+The web app (`src/dayfile/web`, install with `pip install "dayfile[web]"`) is a separate process that talks to the API over HTTP. Accounts, GitHub sign-in, invite codes and the dashboard exist only in the multi-user setup (they create logs through an admin API). A self-hosted server runs the API, CLI and feeds; the web app is not part of its compose file yet. Billing is not built.
 
 ## Security notes
 

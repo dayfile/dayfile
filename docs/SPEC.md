@@ -139,7 +139,7 @@ Goal: one URL space, per-credential content, no accounts for readers.
 - **Bearer only.** Writes accept `Authorization: Bearer` only, never the path or query form. No or invalid credential is 401 (same challenge as reads).
 - **Bound to the credential.** Every event's `source.id` must be one of the token's write sources, and its audience (after the `["self"]` default) must be a subset of the token's labels; otherwise 403 and the whole batch is rejected, nothing written. The 403 never says whether an id or `(source, ref)` already exists.
 - **Lifecycle consequence.** Because a remote writer cannot forge `source.id` or widen the audience, the lifecycle authorization rule (same `source_id`, or shared audience label) is now enforced by the credential for HTTP writers. A `family`-only writer's tombstone for a `self`-only event has no effect.
-- **Local writers.** `dayfile add --db PATH`, `poll-email`, `gen` and `notify` write to the database directly and are trusted as the operator. `dayfile add --url` sends `$DAYFILE_WRITE_TOKEN` as the bearer.
+- **Local writers.** `dayfile add --db PATH`, `poll-email`, `gen` and `notify` write to the database directly and are trusted as the operator. `dayfile add --url` sends `$DAYFILE_WRITE_TOKEN` as the bearer, trimmed of surrounding whitespace (the same for `dayfile mcp` and its two token variables).
 - **Rate limit.** Each write token may post 600 events per 60 seconds (fixed window per token id, in memory, reset on restart); beyond that, 429 with `Retry-After` and nothing is written. Configurable through `create_app(write_limit=(events, seconds))`. Failed authentication is not counted.
 - **Still open.** Write tokens are long-lived like read tokens.
 

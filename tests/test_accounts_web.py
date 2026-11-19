@@ -157,7 +157,8 @@ def test_the_callback_answers_with_a_page_not_a_redirect(web):
 
 def test_signup_needs_a_valid_invite_and_then_signs_in_as_the_new_account(web, db):
     sign_in(web)
-    assert 'name="invite"' in web.get("/signup").text
+    page = web.get("/signup").text
+    assert 'name="invite"' in page and 'class="signin"' not in page
     r = web.post("/signup", data={"invite": invite(db), "terms": "yes"}, headers={"Origin": ORIGIN})
     assert r.status_code == 303 and r.headers["location"] == "/account"
     page = web.get("/account")
