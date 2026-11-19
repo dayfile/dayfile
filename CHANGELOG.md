@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+- The CLI and `dayfile mcp` trim whitespace from `DAYFILE_WRITE_TOKEN` and `DAYFILE_READ_TOKEN`; a trailing line break no longer turns the request body into garbage.
+- The sign-in page redirects a signed-in visitor to the log, and a lapsed viewer token while polling goes back to the log rather than the sign-in page.
+- The sign-in and sign-up pages no longer show a "Sign in" link in the header.
+- Terminology: username everywhere a user sees it; README "Two ways to run it" simplified.
+
 ## 0.1.2
 
 - README: the contributor steps moved to CONTRIBUTING.md; the README is about using dayfile.

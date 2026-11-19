@@ -805,3 +805,8 @@ def test_security_txt_names_a_contact_and_is_not_about_to_expire(web):
     assert "Contact: mailto:team@dayfile.app" in r.text and SECURITY_TXT_EXPIRES in r.text
     expires = datetime.strptime(SECURITY_TXT_EXPIRES, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
     assert expires - datetime.now(UTC) > timedelta(days=30), "renew security.txt"
+
+
+def test_sign_in_page_has_no_redundant_sign_in_link(web):
+    assert 'class="signin"' not in web.get("/login").text
+    assert 'class="signin"' in web.get("/docs").text

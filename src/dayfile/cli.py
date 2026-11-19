@@ -208,10 +208,15 @@ def build_event(args: argparse.Namespace) -> dict[str, Any]:
     return ev
 
 
+def env_token(name: str) -> str | None:
+    """Return the token in environment variable `name`, trimmed, or None if it is empty."""
+    return (os.environ.get(name) or "").strip() or None
+
+
 def post_events(url: str, events: list[dict[str, Any]]) -> tuple[int, Any]:
     """POST events as JSON, bearing $DAYFILE_WRITE_TOKEN if set; return status and body."""
     headers = {"Content-Type": "application/json"}
-    if token := os.environ.get("DAYFILE_WRITE_TOKEN"):
+    if token := env_token("DAYFILE_WRITE_TOKEN"):
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, json.dumps(events).encode(), headers)
     try:

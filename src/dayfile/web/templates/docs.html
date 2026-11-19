@@ -88,6 +88,8 @@ https://USERNAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, fo
 <p>A job that fails loudly is easy to notice. One that silently stops running is not. A <strong>heartbeat</strong> says how often a source (the name on a write token) or a tag should appear in your log, for example "<code>backup-script</code> every <code>24h</code>". Set them under <a href="/account/feeds/heartbeats">Feeds, Heartbeats</a>.</p>
 <p>When nothing arrives for the interval plus a short grace period, dayfile adds an ordinary event to your log: a to-do tagged <code>todo</code> and <code>heartbeat</code>, urgency 2, titled like "nightly-backup: nothing from backup-script in 1 day". When the source reports again, dayfile closes that to-do itself. Because it is a normal open to-do, you see it in the Log, in a feed (for example one filtered on the tag <code>heartbeat</code> with status open) and through an assistant connected over MCP, which can ask for open events tagged <code>heartbeat</code>. Checks run every minute.</p>
 
+<p>A token is a single line with no spaces. If you read it from a file or a secret store, strip the trailing newline: a stray line break makes the request fail with <code>body is not valid JSON</code>.</p>
+
 <h2>Recipes</h2>
 <h3>Cron or any shell script</h3>
 <pre><code>0 3 * * * backup.sh &amp;&amp; \

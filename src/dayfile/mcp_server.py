@@ -12,6 +12,8 @@ from typing import Any
 
 Request = Callable[[str, str, Any], Awaitable[tuple[int, Any]]]  # method, path and query, body
 
+TOKEN_VARS = ("DAYFILE_READ_TOKEN", "DAYFILE_WRITE_TOKEN")
+
 INSTRUCTIONS = (
     "dayfile is an append-only event log. Events are never edited: to finish a to-do, close it; "
     "to-dos are events tagged `todo`. Read with list_events, write with add_event. "
@@ -201,8 +203,7 @@ def build_server(request: Request) -> Any:
 def main() -> int:
     """Run on stdio, configured by DAYFILE_URL, DAYFILE_READ_TOKEN and DAYFILE_WRITE_TOKEN."""
     url = os.environ.get("DAYFILE_URL", "http://127.0.0.1:8000")
-    request = http_request(
-        url, os.environ.get("DAYFILE_READ_TOKEN"), os.environ.get("DAYFILE_WRITE_TOKEN")
-    )
+    read, write = (os.environ.get(n, "").strip() or None for n in TOKEN_VARS)
+    request = http_request(url, read, write)
     build_server(request).run("stdio")
     return 0
