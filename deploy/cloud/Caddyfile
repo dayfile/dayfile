@@ -29,8 +29,9 @@ www.{$DAYFILE_SITE_DOMAIN:dayfile.app} {
 	redir https://{$DAYFILE_SITE_DOMAIN:dayfile.app}{uri} permanent
 }
 
-# The bare service domain (and www) has no tenant: it serves the public /status and sends everyone else
-# to the site. Like the site host it has its own certificate, not an on-demand one.
+# The bare service domain (and www) has no tenant: it serves the public /status, the one MCP address
+# for everyone (the log comes from the credential) and sends everyone else to the site. Like the site
+# host it has its own certificate, not an on-demand one.
 {$DAYFILE_BASE_DOMAIN:dayfile.cloud}, www.{$DAYFILE_BASE_DOMAIN:dayfile.cloud} {
 	header {
 		X-Content-Type-Options nosniff
@@ -39,6 +40,12 @@ www.{$DAYFILE_SITE_DOMAIN:dayfile.app} {
 	}
 
 	handle /status {
+		reverse_proxy dayfile:8000
+	}
+	handle /mcp {
+		reverse_proxy dayfile:8000
+	}
+	handle /.well-known/oauth-protected-resource/mcp {
 		reverse_proxy dayfile:8000
 	}
 	handle {
