@@ -142,15 +142,16 @@ log("Deployed v1.8", tags=["deploy"])</code></pre>
 <li>To catch events released late, keep <code>cursor</code> and <code>released_cursor</code> from each response and send them back as <code>since_seq</code> and <code>released_after</code>.</li>
 </ul>
 
-<h2>Connect an AI assistant (MCP)</h2>
-<p>Your log speaks <strong>MCP</strong> (the Model Context Protocol), so assistants such as Claude can list your events, add one, close a to-do and retract a mistake.</p>
-<ul>
-<li><strong>In Claude:</strong> open <em>Customize</em>, then <em>Connectors</em>, then <em>Add custom connector</em>. Enter <code>https://&lt;you&gt;.{{ base_domain }}/mcp</code> and press <em>Connect</em>. You sign in with GitHub and choose whether the assistant may write or only read.</li>
-<li><strong>In Claude Code:</strong> <code>claude mcp add --transport http dayfile https://&lt;you&gt;.{{ base_domain }}/mcp</code>, then run <code>/mcp</code> to sign in.</li>
-<li><strong>With tokens instead:</strong> send <code>Authorization: Bearer &lt;read&gt;~&lt;write&gt;</code>, a read token and a write token joined with a tilde. Leave out the tilde and the write token for read-only access.</li>
+<h2 id="connect">Connect an AI assistant</h2>
+<p>Your log speaks <strong>MCP</strong> (the Model Context Protocol), so an assistant such as Claude can list your events, add one, close a to-do and retract a mistake. It has five tools: list events, get event, add event, close to-do and retract event. Nothing is ever deleted: closing and retracting add events.</p>
+<ol>
+<li><strong>In Claude:</strong> add a custom connector (in the connectors list choose <em>Add</em>, then <em>Add custom connector</em>). Enter <code>https://{{ base_domain }}/mcp</code>, the one address for everyone. Claude opens a sign-in page on this site: sign in with GitHub, then choose whether the assistant may read and write or only read. The connection is for the log of the account you sign in as, and only that log.</li>
+<li><strong>In Claude Code:</strong> <code>claude mcp add --transport http dayfile https://{{ base_domain }}/mcp</code>, then run <code>/mcp</code> to sign in.</li>
+<li><strong>Your own address:</strong> <code>https://USERNAME.{{ base_domain }}/mcp</code> does the same for one log and works with the same sign-in.</li>
+<li><strong>With tokens instead:</strong> send <code>Authorization: Bearer &lt;read&gt;~&lt;write&gt;</code> to your own address, a read token and a write token joined with a tilde. Leave out the tilde and the write token for read-only access.</li>
 <li><strong>Locally:</strong> <code>pip install "dayfile[mcp]"</code> adds the <code>dayfile mcp</code> command, which uses <code>DAYFILE_URL</code>, <code>DAYFILE_READ_TOKEN</code> and <code>DAYFILE_WRITE_TOKEN</code>.</li>
-</ul>
-<p>Apps you connect by signing in are listed under <a href="/account/tokens">Tokens</a>, where you can disconnect them at any time.</p>
+</ol>
+<p>Apps you connect by signing in are listed under <a href="/account/tokens">Tokens</a>, where you can disconnect them at any time. If you have no account yet, signing in takes you to sign-up first. Questions or problems: <a href="mailto:team@dayfile.app">team@dayfile.app</a>.</p>
 
 <h2>Limits</h2>
 <ul>
