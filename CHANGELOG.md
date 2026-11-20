@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- A database file that dayfile creates is mode 0600 (owner only); an existing file keeps its mode.
+- `GET /` on the server redirects to `/docs` instead of returning 404.
+- `dayfile mcp` reports its version in the MCP handshake.
+- README and the docs page: connect Claude and Claude Code through `https://dayfile.cloud/mcp`, the CloudEvents feed, and a note that the SSE stream sends only new events.
+
 ## 0.1.3
 
 - The CLI and `dayfile mcp` trim whitespace from `DAYFILE_WRITE_TOKEN` and `DAYFILE_READ_TOKEN`; a trailing line break no longer turns the request body into garbage.
