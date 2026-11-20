@@ -1,17 +1,18 @@
 # Running dayfile as user services
 
 ```
-mkdir -p ~/.local/share/dayfile ~/.config/dayfile ~/.config/systemd/user
-cp deploy/selfhost/*.service ~/.config/systemd/user/
+python3 -m venv ~/.local/share/dayfile/venv
+~/.local/share/dayfile/venv/bin/pip install dayfile      # add "dayfile[mcp]" for the assistant server
+mkdir -p ~/.config/dayfile ~/.config/systemd/user
+cp deploy/selfhost/*.service ~/.config/systemd/user/     # or copy them from the repo
 echo 'NTFY_URL=https://ntfy.sh/<your-secret-topic>' > ~/.config/dayfile/env && chmod 600 ~/.config/dayfile/env
 systemctl --user daemon-reload
-systemctl --user enable --now dayfile dayfile-email dayfile-notify
-journalctl --user -u dayfile-email -f
+systemctl --user enable --now dayfile                    # add dayfile-email and dayfile-notify if you use them
 ```
 
-Edit `WorkingDirectory` if the checkout is elsewhere. Run `loginctl enable-linger $USER` to keep the
+The units expect the virtualenv above; change the `ExecStart` path if yours is elsewhere. Run `loginctl enable-linger $USER` to keep the
 services running when logged out. The server binds 127.0.0.1; put a TLS proxy in front before exposing it.
-Create tokens with `DAYFILE_DB=~/.local/share/dayfile/dayfile.db uv run dayfile token create ...`.
+Create tokens with `DAYFILE_DB=~/.local/share/dayfile/dayfile.db ~/.local/share/dayfile/venv/bin/dayfile token create --labels self`.
 
 ## Docker and HTTPS (a VPS on Hetzner, DigitalOcean, or anywhere)
 
@@ -21,6 +22,13 @@ echo 'DAYFILE_DOMAIN=feeds.example.com' > .env     # DNS A record must point at 
 docker compose up -d
 docker compose exec dayfile dayfile --url https://feeds.example.com token create --labels self
 ```
+
+Already running Traefik, Nginx Proxy Manager or your own Caddy? Use `docker compose -f compose.proxy.yaml up -d`
+instead: it starts only dayfile, published on `127.0.0.1:8000`, and you point your proxy at it. The proxy must send
+`X-Forwarded-Proto` and `X-Forwarded-For` (most do by default) so feed links say `https://`.
+
+`DAYFILE_AUTH_URI` is optional; leave it unset for a log you read with tokens. It only matters if you run your own
+sign-in service (see `docs/SPEC.md`).
 
 Optional workers: `docker compose --profile email up -d` (put `GMAIL_USER` and `GMAIL_APP_PASSWORD`
 in `.env`), `--profile notify` (`NTFY_URL`). Open only ports 22, 80 and 443 in the firewall.

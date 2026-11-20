@@ -32,7 +32,7 @@ services:
     pull_policy: never            # built by the dayfile service above
     restart: unless-stopped
     logging: *logging
-    command: ["uvicorn", "dayfile.web:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers"]
+    command: ["uvicorn", "dayfile.web:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips", "*"]
     volumes:
       - ${ACCOUNTS_DIR:-/srv/dayfile/accounts}:/accounts            # accounts.db: the web app's own data
       - ${SECRETS_DIR:-/srv/dayfile/secrets}:/run/secrets:ro        # the GitHub client secret, if any

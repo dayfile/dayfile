@@ -4,10 +4,9 @@
 Description=dayfile ntfy notifier
 
 [Service]
-WorkingDirectory=%h/python_projects/dayfile
 Environment=DAYFILE_DB=%h/.local/share/dayfile/dayfile.db
 EnvironmentFile=%h/.config/dayfile/env
-ExecStart=/usr/bin/env uv run dayfile notify
+ExecStart=%h/.local/share/dayfile/venv/bin/dayfile notify
 Restart=always
 RestartSec=30
 

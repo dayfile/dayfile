@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+- Docker: the container trusts the proxy in front of it, so feed links (`feed_url`, the Atom self link) say `https://` behind Caddy instead of `http://`.
+- Self-hosting: the systemd units run from a virtualenv at `~/.local/share/dayfile/venv` and no longer need a checkout; `deploy/selfhost/compose.proxy.yaml` runs dayfile alone on `127.0.0.1:8000` for people with their own reverse proxy; the README explains `DAYFILE_AUTH_URI`.
+
 ## 0.1.4
 
 - A database file that dayfile creates is mode 0600 (owner only); an existing file keeps its mode.
