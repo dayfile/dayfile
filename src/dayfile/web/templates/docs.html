@@ -51,7 +51,7 @@ https://USERNAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
 <p>The server adds <code>seq</code> (the event's position in the log) and <code>recorded_at</code>. You can post one event or a JSON array of them; if any event is malformed, none is written.</p>
 
 <h2>Reading with filters</h2>
-<p>These work on <code>/events</code>, <code>/feed.json</code> and <code>/feed.atom</code>:</p>
+<p>These work on <code>/events</code>, <code>/feed.json</code>, <code>/feed.atom</code> and <code>/feed.cloudevents</code>:</p>
 <div class="scroll"><table>
 <tr><td><code>tag=a&amp;tag=b</code></td><td>Events with all the tags (<code>tag_any=</code> for any).</td></tr>
 <tr><td><code>status=open</code></td><td><code>open</code> (a <code>todo</code> not yet closed), <code>closed</code>, <code>superseded</code>, <code>retracted</code> or <code>none</code> (an ordinary event with no status). The default shows open, closed and none (not retracted or replaced).</td></tr>
@@ -69,8 +69,8 @@ https://USERNAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
 <tr><td><code>GET /events/{id}</code></td><td>read</td><td>One event.</td></tr>
 <tr><td><code>GET /usage</code></td><td>read</td><td>How full your log is: events and bytes used, your limits, and the write rate.</td></tr>
 <tr><td><code>GET /events/stream</code></td><td>read</td><td>Live updates (Server-Sent Events).</td></tr>
-<tr><td><code>GET /feed.json</code>, <code>/feed.atom</code></td><td>read</td><td>The default feed.</td></tr>
-<tr><td><code>GET /f/FEED.json</code>, <code>.atom</code></td><td>read, or none if public</td><td>A named feed.</td></tr>
+<tr><td><code>GET /feed.json</code>, <code>/feed.atom</code>, <code>/feed.cloudevents</code></td><td>read</td><td>The default feed.</td></tr>
+<tr><td><code>GET /f/FEED.json</code>, <code>.atom</code>, <code>.cloudevents</code></td><td>read, or none if public</td><td>A named feed.</td></tr>
 <tr><td><code>GET /t/READ_TOKEN/feed.json</code> and <code>/t/READ_TOKEN/f/FEED.json</code></td><td>in the path</td><td>The same feeds, for readers that cannot send headers.</td></tr>
 <tr><td><code>/mcp</code></td><td>read, and optionally write</td><td>The assistant connection, described below.</td></tr>
 </table></div>
@@ -83,6 +83,13 @@ https://USERNAME.dayfile.cloud/f/work.atom
 https://USERNAME.dayfile.cloud/t/READ_TOKEN/f/work.json   (token in the path, for feed readers)</code></pre>
 <p>A feed without a suffix (<code>/f/work</code>) answers with JSON Feed. A named feed's filter is fixed: the URL accepts only paging (<code>limit</code>, <code>since_seq</code>).</p>
 <p>A feed is <strong>private</strong> by default and needs a read token. Make it <strong>public</strong> and anyone can read it with no token, read only. A public feed shows only events that match its filter <em>and</em> carry the audience label <code>public</code> (<code>"audience": ["public"]</code>), so nothing is exposed unless you marked it. Posting still needs a write token. Turning a feed private stops it at once, though copies other people already made may remain.</p>
+
+<h2>CloudEvents</h2>
+<p>Add <code>.cloudevents</code> to a feed address to read it as CloudEvents 1.0, a JSON batch with the content type <code>application/cloudevents-batch+json</code>. The filters above work on it, and so do named feeds (<code>/f/FEED.cloudevents</code>) and the token-in-path form.</p>
+<pre><code>curl -H "Authorization: Bearer READ_TOKEN" \
+  "https://USERNAME.{{ base_domain }}/feed.cloudevents?tag=todo&amp;status=open"</code></pre>
+<p>dayfile events have no <code>type</code>, so every exported event carries the CloudEvents type <code>app.dayfile.event</code>. The dayfile fields travel as extension attributes (<code>dayfiletitle</code>, <code>dayfiletags</code> and so on).</p>
+<p>To import, <code>POST /events</code> with the content type <code>application/cloudevents+json</code> (one event) or <code>application/cloudevents-batch+json</code> (a batch). A foreign event's <code>type</code> becomes a tag, so <code>com.acme.sensor</code> becomes <code>com-acme-sensor</code>, and sending the same event twice changes nothing. The full mapping is in <code>docs/SPEC.md</code> in the repository.</p>
 
 <h2>Know when something goes quiet</h2>
 <p>A job that fails loudly is easy to notice. One that silently stops running is not. A <strong>heartbeat</strong> says how often a source (the name on a write token) or a tag should appear in your log, for example "<code>backup-script</code> every <code>24h</code>". Set them under <a href="/account/feeds/heartbeats">Feeds, Heartbeats</a>.</p>
