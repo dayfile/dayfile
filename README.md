@@ -63,10 +63,11 @@ A feed URL answers two questions: **which view** of the log, and **who is asking
 
 | Path | Meaning | Example |
 |---|---|---|
-| `/feed.json`, `/feed.atom` | the default feed: the whole log, filtered by query parameters | `/feed.json?tag=todo&status=open` |
-| `/f/<feed>.json`, `.atom` | a **named feed**: a saved filter (tags, status, time window) with a fixed meaning | `/f/todo-open.atom` |
+| `/feed.json`, `/feed.atom`, `/feed.cloudevents` | the default feed: the whole log, filtered by query parameters | `/feed.json?tag=todo&status=open` |
+| `/f/<feed>.json`, `.atom`, `.cloudevents` | a **named feed**: a saved filter (tags, status, time window) with a fixed meaning | `/f/todo-open.atom` |
 | `/t/<token>/...` | the same feeds, with a **read token in the path**, for feed readers that cannot send headers | `/t/<token>/f/todo-open.atom` |
 
+- `.cloudevents` serves the same page as a CloudEvents 1.0 JSON batch. `POST /events` also accepts CloudEvents (`application/cloudevents+json` or `application/cloudevents-batch+json`). The mapping is in [docs/SPEC.md](docs/SPEC.md).
 - Programs should send the token as `Authorization: Bearer <token>` and leave `/t/<token>` out; the path form is a compatibility layer.
 - The token decides what you may see (its audience labels), and it can expire or be revoked. Treat a URL that contains one as a secret.
 - A named feed is `private` unless you make it `public`. Anyone can read a public feed without a token, but only the events whose audience includes `public`.
