@@ -150,9 +150,14 @@ def build_server(request: Request) -> Any:
 
         return run
 
-    read_only = ToolAnnotations(readOnlyHint=True)
+    # Every tool touches only the caller's own log (openWorldHint false). The writes only append
+    # events; none deletes or overwrites, and each call appends again (idempotentHint false).
+    read_only = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
+    append = ToolAnnotations(
+        readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False
+    )
 
-    @server.tool(annotations=read_only)
+    @server.tool(title="List events", annotations=read_only)
     @guarded
     async def dayfile_list_events(
         tags: list[str] | None = None,
@@ -160,17 +165,20 @@ def build_server(request: Request) -> Any:
         within: str | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
-        """List events, newest first. `tags`: all must match (max 5). `status`: open, closed,
-        superseded, retracted or none (to-dos are open until closed). `within`: e.g. 7d or 12h."""
+        """List events from the log, newest first, as a list of event objects. Filters: `tags` (all
+        must match, at most 5), `status` (open, closed, superseded, retracted or none; to-dos are
+        open until closed) and `within` (such as 7d or 12h); returns at most `limit` events
+        (default 20, maximum 100)."""
         return await list_events(request, tags or [], status, within, limit)
 
-    @server.tool(annotations=read_only)
+    @server.tool(title="Get event", annotations=read_only)
     @guarded
     async def dayfile_get_event(id: str) -> dict[str, Any]:
-        """Get one event by its id."""
+        """Get one event by its id, as an event object. Returns an error if no event has that
+        id."""
         return await get_event(request, id)
 
-    @server.tool()
+    @server.tool(title="Add event", annotations=append)
     @guarded
     async def dayfile_add_event(
         title: str,
@@ -180,21 +188,25 @@ def build_server(request: Request) -> Any:
         urgency: int = 0,
         due: str | None = None,
     ) -> dict[str, Any]:
-        """Append an event to the log. Set `todo` for something to be done later, `due` (a date
-        such as 2026-12-01) to give it a deadline, `urgency` 0 to 3 for how loudly to notify."""
+        """Append a new event to the log; nothing is edited or deleted. `title` is required;
+        `body`, `tags`, `todo` (makes it a to-do), `due` (a date such as 2026-12-01) and `urgency`
+        (0 to 3) are optional. Each call adds one event; a log holds at most 50,000 events and
+        accepts 60 writes a minute."""
         return await add_event(request, title, body, tags or [], todo, urgency, due)
 
-    @server.tool()
+    @server.tool(title="Close to-do", annotations=append)
     @guarded
     async def dayfile_close_todo(id: str) -> dict[str, Any]:
-        """Close an open to-do by id. Nothing is deleted; a closing event is appended."""
+        """Close an open to-do by its id by appending an event that completes it; nothing is
+        deleted. Closing it again adds another closing event and it stays closed."""
         return await close_todo(request, id)
 
-    @server.tool()
+    @server.tool(title="Retract event", annotations=append)
     @guarded
     async def dayfile_retract_event(id: str) -> dict[str, Any]:
-        """Retract an event that was a mistake. Nothing is deleted; a retracting event is
-        appended. Retracting a closing event reopens its target."""
+        """Retract an event that was a mistake by appending an event that retracts it; the
+        original stays in the log but is hidden from normal views. Retracting a closing event
+        reopens the to-do, and retracting a retraction brings the original back."""
         return await retract_event(request, id)
 
     return server

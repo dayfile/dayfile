@@ -68,6 +68,26 @@ def test_server_exposes_five_tools_and_read_tools_are_marked_read_only(request_f
     assert not (write and write.read_only_hint)
 
 
+def test_every_tool_has_a_title_and_honest_hints(request_fn):
+    server = m.build_server(request_fn)
+    tools = run(server.list_tools())
+    assert len(tools) == 5
+    for tool in tools:
+        hints = tool.annotations
+        assert tool.title, tool.name
+        assert hints is not None and hints.read_only_hint is not None, tool.name
+        assert hints.open_world_hint is False, tool.name  # only the caller's own log
+        assert tool.description and tool.description.count(". ") <= 2, tool.name
+        if not hints.read_only_hint:
+            # Writes only append: never destructive, and a repeat appends again.
+            assert hints.destructive_hint is False, tool.name
+            assert hints.idempotent_hint is False, tool.name
+    by_name = {t.name: t for t in tools}
+    reads = {n for n, t in by_name.items() if t.annotations.read_only_hint}
+    assert reads == {"dayfile_list_events", "dayfile_get_event"}
+    assert "retracting a retraction" in by_name["dayfile_retract_event"].description
+
+
 def test_calling_a_tool_through_the_server(request_fn):
     server = m.build_server(request_fn)
     run(server.call_tool("dayfile_add_event", {"title": "hello", "tags": ["x"]}))
