@@ -570,7 +570,8 @@ def create_app(
         except ModuleNotFoundError as e:
             raise RuntimeError("the MCP endpoint needs `pip install dayfile[mcp]`") from e
         issuer = oauth_issuer or os.environ.get("DAYFILE_OAUTH_ISSUER") or None
-        mcp_http.mount(app, tenancy.resolve, authenticate, clock, issuer)
+        main = (tenancy.base_domain, tenancy.get) if isinstance(tenancy, DirectoryTenancy) else None
+        mcp_http.mount(app, tenancy.resolve, authenticate, clock, issuer, main)
     return app
 
 

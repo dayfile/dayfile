@@ -157,6 +157,10 @@ def install(app: FastAPI, d: Deps) -> None:
     def resource_url(slug: str) -> str:
         return f"https://{slug}.{d.base_domain}/mcp"
 
+    def resource_ok(wanted: str, slug: str) -> bool:
+        """True if `wanted` names this owner's log or the main address (or is empty)."""
+        return wanted in ("", resource_url(slug), f"https://{d.base_domain}/mcp")
+
     def read_ask(values: Any, conn: Any) -> tuple[dict[str, Any], str] | str:
         """The registered client and redirect for a request, or the reason it cannot proceed."""
         client = grants.get_client(conn, str(values.get("client_id", "")))
@@ -205,7 +209,7 @@ def install(app: FastAPI, d: Deps) -> None:
                 "then connect again.",
             )
         wanted = str(values.get("resource", ""))
-        if wanted and wanted != resource_url(who["slug"]):
+        if not resource_ok(wanted, who["slug"]):
             return d.message(
                 request,
                 400,
@@ -268,9 +272,7 @@ def install(app: FastAPI, d: Deps) -> None:
         state = state[:500]
         if decision != "allow":
             return bounce(uri, state, issuer, error="access_denied")
-        if not grants.CHALLENGE.fullmatch(code_challenge) or (
-            resource and resource != resource_url(who["slug"])
-        ):
+        if not grants.CHALLENGE.fullmatch(code_challenge) or not resource_ok(resource, who["slug"]):
             return bounce(uri, state, issuer, error="invalid_request")
         now = d.clock()
         code = await run_in_threadpool(
@@ -284,7 +286,9 @@ def install(app: FastAPI, d: Deps) -> None:
     def tokens_for(
         account: dict[str, Any], client: dict[str, Any], can_write: bool
     ) -> tuple[list[str], str] | None:
-        return mint_pair(d.control, account["slug"], can_write, client["name"])
+        minted = mint_pair(d.control, account["slug"], can_write, client["name"])
+        # The username leads so the main address can find the log; per-log addresses accept it too.
+        return (minted[0], f"{account['slug']}:{minted[1]}") if minted else None
 
     def answer(access: str, refresh: str) -> Response:
         return JSONResponse(

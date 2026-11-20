@@ -227,6 +227,18 @@ def test_a_resource_for_another_log_is_refused(signed_in):
     assert signed_in.get("/oauth/authorize", params=mine).status_code == 200
 
 
+def test_the_main_address_is_a_valid_resource(signed_in):
+    client_id = register(signed_in)
+    main = authorize_params(client_id, resource="https://example.test/mcp")
+    assert signed_in.get("/oauth/authorize", params=main).status_code == 200
+    fields = {**main, "decision": "allow", "access": "write"}
+    r = signed_in.post("/oauth/authorize", data=fields, headers=POST)
+    assert "code" in parse_qs(urlsplit(r.headers["location"]).query)
+    fields["resource"] = "https://other.test/mcp"
+    r = signed_in.post("/oauth/authorize", data=fields, headers=POST)
+    assert parse_qs(urlsplit(r.headers["location"]).query)["error"] == ["invalid_request"]
+
+
 def test_denying_returns_access_denied_and_the_post_needs_the_site_as_origin(signed_in):
     client_id = register(signed_in)
     fields = {"client_id": client_id, "redirect_uri": REDIRECT, "state": "s1", "decision": "deny"}
@@ -253,6 +265,23 @@ def test_the_code_flow_gives_a_credential_that_works_at_the_mcp_url(signed_in, m
     assert not added.json()["result"].get("isError"), added.text
     listed = mcp(mcp_core, body["access_token"], "dayfile_list_events", status="open")
     assert "from claude" in listed.text
+
+
+def test_the_credential_names_the_log_so_the_main_address_can_use_it(signed_in, mcp_core):
+    client_id = register(signed_in)
+    body = exchange(signed_in, client_id, connect(signed_in, client_id)).json()
+    assert body["access_token"].startswith("acme:")
+    headers = {
+        **JSON_HEADERS,
+        "Authorization": f"Bearer {body['access_token']}",
+        "Host": "example.test",
+    }
+    call = {"name": "dayfile_add_event", "arguments": {"title": "via the main address"}}
+    rpc = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": call}
+    added = mcp_core.post("/mcp", json=rpc, headers=headers)
+    assert not added.json()["result"].get("isError"), added.text
+    own = mcp(mcp_core, body["access_token"], "dayfile_list_events")  # the log's own address
+    assert "via the main address" in own.text
 
 
 def test_a_read_only_approval_cannot_write(signed_in, mcp_core):

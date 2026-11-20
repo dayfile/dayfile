@@ -22,6 +22,7 @@ from starlette.routing import Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from dayfile import mcp_server
+from dayfile.tenancy import SLUG
 
 SEPARATOR = "~"  # not in a token's alphabet (hex, dot, base64url)
 METADATA_PATH = "/.well-known/oauth-protected-resource/mcp"
@@ -46,6 +47,12 @@ def split_credential(value: str) -> tuple[str, str | None]:
     """Split `read~write` into its parts; the write part is None for a read-only credential."""
     read, _, write = value.partition(SEPARATOR)
     return read, (write or None)
+
+
+def split_slug(credential: str) -> tuple[str | None, str]:
+    """Split `username:read~write` into the username and the rest; no username gives None."""
+    slug, colon, rest = credential.partition(":")
+    return (slug, rest) if colon and SLUG.match(slug) else (None, credential)
 
 
 def origin_of(host: str) -> str:
@@ -121,9 +128,15 @@ class Gate:
         authenticate: Callable[[Any, str, str], Any],
         clock: Callable[[], str],
         issuer: str | None,
+        main: tuple[str, Callable[[str], Any]] | None = None,
     ) -> None:
         self.inner, self.resolve, self.authenticate = inner, resolve, authenticate
         self.clock, self.issuer = clock, issuer
+        self.main_host, self.by_username = main if main else (None, None)
+
+    def is_main(self, host: str) -> bool:
+        """True if `host` is the one address that finds the log from the credential."""
+        return self.main_host is not None and host.split(":")[0].lower() == self.main_host
 
     def challenge(self, host: str, error: str | None = None) -> Response:
         """401 whose header tells the client where to start signing in."""
@@ -152,17 +165,34 @@ class Gate:
             return
         request = Request(scope, receive)
         host = request.headers.get("host", "")
-        tenant = self.tenant_or_refusal(host)
-        if isinstance(tenant, Response):
-            return await tenant(scope, receive, send)
         scheme, _, credential = request.headers.get("authorization", "").partition(" ")
         credential = credential.strip() if scheme.lower() == "bearer" else ""
+        if self.is_main(host):
+            if not credential:
+                return await self.challenge(host)(scope, receive, send)
+            username, credential = split_slug(credential)
+            tenant = self.by_username(username) if username and self.by_username else None
+            if tenant is None:
+                return await self.challenge(host, "invalid_token")(scope, receive, send)
+            if tenant.suspended:
+                refusal = JSONResponse({"error": "account suspended"}, status_code=403)
+                return await refusal(scope, receive, send)
+            shown = host
+            host = f"{username}.{self.main_host}"
+        else:
+            tenant = self.tenant_or_refusal(host)
+            if isinstance(tenant, Response):
+                return await tenant(scope, receive, send)
+            shown = host
+            username, credential = split_slug(credential)
+            if username is not None and username != tenant.id:
+                return await self.challenge(host, "invalid_token")(scope, receive, send)
         if not credential:
-            return await self.challenge(host)(scope, receive, send)
+            return await self.challenge(shown)(scope, receive, send)
         read, write = split_credential(credential)
         principal = await run_in_threadpool(self.authenticate, tenant, read, self.clock())
         if principal is None or principal.writer_sources:
-            return await self.challenge(host, "invalid_token")(scope, receive, send)
+            return await self.challenge(shown, "invalid_token")(scope, receive, send)
         marker = CREDENTIALS.set(Credentials(read, write, host))
         try:
             await self.inner(scope, receive, send)
@@ -172,9 +202,10 @@ class Gate:
     async def metadata(self, request: Request) -> Response:
         """RFC 9728 protected resource metadata: which server signs people in for this URL."""
         host = request.headers.get("host", "")
-        tenant = self.tenant_or_refusal(host)
-        if isinstance(tenant, Response):
-            return tenant
+        if not self.is_main(host):
+            tenant = self.tenant_or_refusal(host)
+            if isinstance(tenant, Response):
+                return tenant
         if not self.issuer:
             return JSONResponse({"error": "not found"}, status_code=404)
         return JSONResponse(
@@ -193,8 +224,13 @@ def mount(
     authenticate: Callable[[Any, str, str], Any],
     clock: Callable[[], str],
     issuer: str | None,
+    main: tuple[str, Callable[[str], Any]] | None = None,
 ) -> None:
-    """Add `/mcp` and its discovery document to `app` (needs the `dayfile[mcp]` extra)."""
+    """Add `/mcp` and its discovery document to `app` (needs the `dayfile[mcp]` extra).
+
+    `main` is the base domain and a lookup by username: that bare domain then serves `/mcp` for
+    everyone, finding the log from the username in the credential.
+    """
     from mcp.server.transport_security import TransportSecuritySettings
 
     server = mcp_server.build_server(asgi_requester(app))
@@ -205,7 +241,7 @@ def mount(
         stateless_http=True,
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
-    gate = Gate(inner, resolve, authenticate, clock, issuer)
+    gate = Gate(inner, resolve, authenticate, clock, issuer, main)
     app.router.routes.append(Route("/mcp", gate))
     app.router.routes.append(Route(METADATA_PATH, gate.metadata, methods=["GET"]))
     started: Callable[[Any], Any] = app.router.lifespan_context
