@@ -1,0 +1,16 @@
+# dayfile behind a reverse proxy you already run (Traefik, Nginx Proxy Manager, your own Caddy):
+#   docker compose -f compose.proxy.yaml up -d
+# Publishes dayfile on 127.0.0.1:8000 only; point your proxy at it and terminate TLS there.
+# The proxy must send X-Forwarded-Proto and X-Forwarded-For, so feed links say https://.
+# Change the left side of the port mapping to "8000:8000" only if the proxy runs on another host.
+services:
+  dayfile:
+    build: ../..
+    restart: unless-stopped
+    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - dayfile-data:/data
+    environment:
+      DAYFILE_AUTH_URI: ${DAYFILE_AUTH_URI:-}
+volumes:
+  dayfile-data:

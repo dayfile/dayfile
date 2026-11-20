@@ -1,11 +1,11 @@
 # systemd --user unit: the HTTP server. Install with deploy/selfhost/README.md.
+# Expects dayfile in a virtualenv at ~/.local/share/dayfile/venv (the README creates it).
 [Unit]
 Description=dayfile HTTP server
 
 [Service]
-WorkingDirectory=%h/python_projects/dayfile
 Environment=DAYFILE_DB=%h/.local/share/dayfile/dayfile.db
-ExecStart=/usr/bin/env uv run uvicorn dayfile.app:app --host 127.0.0.1 --port 8000
+ExecStart=%h/.local/share/dayfile/venv/bin/uvicorn dayfile.app:app --host 127.0.0.1 --port 8000
 Restart=on-failure
 
 [Install]

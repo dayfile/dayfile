@@ -638,3 +638,23 @@ def test_launch_stats_accounts_lists_who_signed_up_without_the_deleted_login(tmp
     assert r.returncode == 0, r.stderr
     assert "octo" in r.stdout and "octo-log" in r.stdout
     assert "(deleted)" in r.stdout
+
+
+def test_containers_trust_the_proxy_so_feed_links_say_https():
+    """Caddy connects from the Docker network, not 127.0.0.1; else the https scheme is lost."""
+    assert '"--forwarded-allow-ips", "*"' in (DEPLOY.parent / "Dockerfile").read_text()
+    web = yaml.safe_load((DEPLOY / "cloud" / "compose.yaml").read_text())["services"]["web"]
+    assert web["command"][-2:] == ["--forwarded-allow-ips", "*"]
+
+
+def test_selfhost_proxy_compose_publishes_only_on_loopback():
+    compose = yaml.safe_load((DEPLOY / "selfhost" / "compose.proxy.yaml").read_text())
+    assert set(compose["services"]) == {"dayfile"}
+    assert compose["services"]["dayfile"]["ports"] == ["127.0.0.1:8000:8000"]
+
+
+def test_selfhost_units_do_not_need_a_checkout():
+    for unit in (DEPLOY / "selfhost").glob("*.service"):
+        text = unit.read_text()
+        assert "python_projects" not in text and "WorkingDirectory" not in text, unit.name
+        assert "/usr/bin/env uv" not in text, unit.name

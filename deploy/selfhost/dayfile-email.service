@@ -1,12 +1,12 @@
 # systemd --user unit: Gmail/Google Voice SMS ingest over IMAP IDLE.
-# Credentials come from .env in the working directory (GMAIL_USER, GMAIL_APP_PASSWORD).
+# Put GMAIL_USER=... and GMAIL_APP_PASSWORD=... in ~/.config/dayfile/env (mode 600).
 [Unit]
 Description=dayfile email-in (IMAP IDLE)
 
 [Service]
-WorkingDirectory=%h/python_projects/dayfile
 Environment=DAYFILE_DB=%h/.local/share/dayfile/dayfile.db
-ExecStart=/usr/bin/env uv run dayfile poll-email --folder SMS
+EnvironmentFile=%h/.config/dayfile/env
+ExecStart=%h/.local/share/dayfile/venv/bin/dayfile poll-email --folder SMS
 Restart=always
 RestartSec=30
 
