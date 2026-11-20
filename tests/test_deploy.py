@@ -638,3 +638,18 @@ def test_launch_stats_accounts_lists_who_signed_up_without_the_deleted_login(tmp
     assert r.returncode == 0, r.stderr
     assert "octo" in r.stdout and "octo-log" in r.stdout
     assert "(deleted)" in r.stdout
+
+
+def test_registry_entry_matches_the_package_and_the_readme_marker():
+    import json
+    import tomllib
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    server = json.loads((root / "server.json").read_text())
+    version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+    assert server["version"] == version
+    assert [p["version"] for p in server["packages"]] == [version]
+    assert f"<!-- mcp-name: {server['name']} -->" in (root / "README.md").read_text()
+    assert server["remotes"] == [{"type": "streamable-http", "url": "https://dayfile.cloud/mcp"}]
+    assert len(server["description"]) <= 100

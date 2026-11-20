@@ -1,0 +1,62 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dayfile/dayfile",
+  "title": "dayfile",
+  "description": "Append-only log for your scripts and agents: read events, add them, close to-dos.",
+  "websiteUrl": "https://dayfile.app",
+  "repository": {
+    "url": "https://github.com/dayfile/dayfile",
+    "source": "github"
+  },
+  "version": "0.1.4",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://dayfile.cloud/mcp"
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "dayfile",
+      "version": "0.1.4",
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--with",
+          "value": "mcp>=2.3"
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DAYFILE_URL",
+          "description": "Address of the log's API, such as https://USERNAME.dayfile.cloud or your own server.",
+          "isRequired": true
+        },
+        {
+          "name": "DAYFILE_READ_TOKEN",
+          "description": "A read token for the log. Needed for reading events.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "DAYFILE_WRITE_TOKEN",
+          "description": "A write token for the log. Leave it out for a read-only assistant.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

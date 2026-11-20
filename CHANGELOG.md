@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- One MCP address for everyone, `https://dayfile.cloud/mcp`: sign in, and the credential names your log (`username:read~write`). Your own `<username>.dayfile.cloud/mcp` and bare `read~write` tokens keep working.
+- MCP tools have titles and honest annotations (reads are read-only; writes only append) and plain descriptions with their limits.
+- `dayfile gen review-log` fills a log with a week of sample events, for a directory reviewer's account.
+- The docs page has a "Connect an AI assistant" section that leads with the one address.
+- `server.json` for the MCP Registry, and the `mcp-name` marker in this README that it checks.
+
 ## 0.1.3
 
 - The CLI and `dayfile mcp` trim whitespace from `DAYFILE_WRITE_TOKEN` and `DAYFILE_READ_TOKEN`; a trailing line break no longer turns the request body into garbage.

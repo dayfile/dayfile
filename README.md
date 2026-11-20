@@ -2,6 +2,8 @@
 
 # dayfile
 
+<!-- mcp-name: io.github.dayfile/dayfile -->
+
 **[dayfile.app](https://dayfile.app)**: a personal, append-only event log, served as feeds (JSON Feed, Atom,
 CloudEvents). Free beta: [see the demo](https://dayfile.app/demo), then sign in with GitHub and get your own log at
 `<username>.dayfile.cloud`. Or self-host it: `pip install dayfile`, below.
