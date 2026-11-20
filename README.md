@@ -101,7 +101,13 @@ See the JSON API section of [docs/SPEC.md](https://github.com/dayfile/dayfile/bl
 
 Let an assistant such as Claude read and write your log. Both ways use the same five tools (`dayfile_list_events`, `dayfile_get_event`, `dayfile_add_event`, `dayfile_close_todo`, `dayfile_retract_event`) and can do only what their tokens allow.
 
-**Hosted (dayfile.cloud).** Every log has an MCP address, `https://<username>.dayfile.cloud/mcp`. In Claude, open Customize, then Connectors, then Add custom connector, paste that address and press Connect: you sign in with GitHub and choose read and write or read only. Claude Code can use it too: `claude mcp add --transport http dayfile https://<username>.dayfile.cloud/mcp`, then `/mcp` to sign in. To skip the sign-in, send a read token and a write token joined with `~` as `Authorization: Bearer <read>~<write>` (read only: the read token alone). Disconnect any time under Tokens.
+**Hosted (dayfile.cloud).** One address works for everyone: `https://dayfile.cloud/mcp`. You sign in with GitHub, so there is no username to type.
+
+- **Claude:** open Customize, then Connectors, then Add custom connector, paste the address and press Connect. Sign in with GitHub and choose read and write or read only.
+- **Claude Code:** `claude mcp add --transport http dayfile https://dayfile.cloud/mcp`, then run `/mcp` to sign in.
+- **With tokens, no sign-in:** send `Authorization: Bearer <username>:<read>~<write>`: your username, a colon, then a read token and a write token joined with `~` (read only: the read token alone).
+
+Your log's own address, `https://<username>.dayfile.cloud/mcp`, works the same way, and there the tokens go without the `<username>:` prefix. Disconnect any time under Tokens.
 
 **Local, over stdio.** `dayfile mcp` (`pip install "dayfile[mcp]"`) calls the API at `$DAYFILE_URL` with a read token in `$DAYFILE_READ_TOKEN` and a write token in `$DAYFILE_WRITE_TOKEN`; leave the write token out for a read-only assistant. This is the way to use a self-hosted server without OAuth.
 
