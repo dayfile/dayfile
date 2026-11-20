@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
 from dayfile import admin as admin_mod
@@ -232,6 +232,11 @@ def create_app(
         if _matches(request.headers.get("if-none-match"), etag):
             return Response(status_code=304, headers=headers)
         return Response(body, media_type=MEDIA_TYPES[fmt], headers=headers)
+
+    @app.get("/", include_in_schema=False)
+    def root() -> RedirectResponse:
+        """Send a browser that opens the bare server address to the API docs."""
+        return RedirectResponse("/docs", status_code=307)
 
     @app.get("/usage")
     async def usage(request: Request) -> Response:

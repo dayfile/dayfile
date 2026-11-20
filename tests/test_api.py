@@ -317,3 +317,10 @@ def test_stream_ends_when_the_token_is_revoked(db_path, clock):
     started = time.monotonic()
     r = TestClient(app).get("/events/stream", headers={"Authorization": f"Bearer {tok.value}"})
     assert r.status_code == 200 and time.monotonic() - started < 2.5
+
+
+def test_bare_address_redirects_to_the_api_docs(tmp_path):
+    client = TestClient(create_app(tmp_path / "log.db"))
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/docs"
+    assert client.get("/docs").status_code == 200

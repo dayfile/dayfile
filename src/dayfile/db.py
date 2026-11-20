@@ -1,6 +1,7 @@
 """Connection setup, schema load, and event queries."""
 
 import json
+import os
 import sqlite3
 from collections.abc import Collection
 from pathlib import Path
@@ -20,11 +21,23 @@ SCHEMA_VERSION = 11
 VIEWS = ("event_state", "lifecycle_edges")  # drop order
 
 
+def _create_private(path: str | Path) -> None:
+    """Create a missing database file readable by its owner only (the log is private data)."""
+    p = str(path)
+    if p == ":memory:" or p.startswith("file:") or os.path.exists(p):
+        return
+    try:
+        os.close(os.open(p, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600))
+    except FileExistsError:
+        pass
+
+
 def connect(path: str | Path) -> sqlite3.Connection:
     """Open the database with required pragmas, loading the schema if it is empty.
 
     Connections run in autocommit mode; writers open transactions explicitly.
     """
+    _create_private(path)
     conn = sqlite3.connect(path, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
