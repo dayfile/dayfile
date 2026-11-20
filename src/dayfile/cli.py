@@ -59,7 +59,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     notify.add_argument("--interval", type=float, default=30, help="seconds between ticks")
     notify.add_argument("--once", action="store_true", help="tick once and exit")
     notify.add_argument("--db", default=os.environ.get("DAYFILE_DB", "dayfile.db"))
-    gen = sub.add_parser("gen", help="run a generator (weather, digest)")
+    gen = sub.add_parser("gen", help="run a generator (weather, digest, review-log)")
     gen_sub = gen.add_subparsers(dest="generator", required=True)
     wx = gen_sub.add_parser("weather", help="write today's weather.daily event")
     wx.add_argument("--lat", type=float, required=True)
@@ -70,7 +70,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     dg.add_argument("--day", help="YYYY-MM-DD (default: yesterday, UTC)")
     dg.add_argument("--audience", default="self", help="comma-separated labels")
     dg.add_argument("--summarizer", help="package.module:function (default: plain)")
-    for p in (wx, dg):
+    rv = gen_sub.add_parser(
+        "review-log", help="fill a log with a week of sample events (for a reviewer's account)"
+    )
+    for p in (wx, dg, rv):
         p.add_argument("--db", default=os.environ.get("DAYFILE_DB", "dayfile.db"))
     sub.add_parser(
         "mcp", help="run an MCP server on stdio (needs dayfile[mcp]; reads DAYFILE_URL/TOKEN)"
@@ -364,11 +367,19 @@ def _key(args: argparse.Namespace) -> int:
 
 def _gen(args: argparse.Namespace) -> int:
     from dayfile import db
-    from dayfile.gen import digest, weather
+    from dayfile.gen import digest, review, weather
     from dayfile.timefmt import minus
 
-    audience = [x.strip() for x in args.audience.split(",")]
     now_ts = now()
+    if args.generator == "review-log":
+        conn = db.connect(args.db)
+        try:
+            made = review.generate(conn, now_ts)
+        finally:
+            conn.close()
+        print(f"{made['events']} new events ({made['heartbeat_todos']} from the heartbeat)")
+        return 0
+    audience = [x.strip() for x in args.audience.split(",")]
     conn = db.connect(args.db)
     try:
         if args.generator == "weather":
