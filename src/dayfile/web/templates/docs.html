@@ -144,10 +144,12 @@ log("Deployed v1.8", tags=["deploy"])</code></pre>
 
 <h2>Connect an AI assistant (MCP)</h2>
 <p>Your log speaks <strong>MCP</strong> (the Model Context Protocol), so assistants such as Claude can list your events, add one, close a to-do and retract a mistake.</p>
+<p>One address works for everyone: <code>https://{{ base_domain }}/mcp</code>. You sign in with GitHub, so there is no username to type.</p>
 <ul>
-<li><strong>In Claude:</strong> open <em>Customize</em>, then <em>Connectors</em>, then <em>Add custom connector</em>. Enter <code>https://&lt;you&gt;.{{ base_domain }}/mcp</code> and press <em>Connect</em>. You sign in with GitHub and choose whether the assistant may write or only read.</li>
-<li><strong>In Claude Code:</strong> <code>claude mcp add --transport http dayfile https://&lt;you&gt;.{{ base_domain }}/mcp</code>, then run <code>/mcp</code> to sign in.</li>
-<li><strong>With tokens instead:</strong> send <code>Authorization: Bearer &lt;read&gt;~&lt;write&gt;</code>, a read token and a write token joined with a tilde. Leave out the tilde and the write token for read-only access.</li>
+<li><strong>In Claude:</strong> open <em>Customize</em>, then <em>Connectors</em>, then <em>Add custom connector</em>. Enter <code>https://{{ base_domain }}/mcp</code> and press <em>Connect</em>. You sign in with GitHub and choose whether the assistant may write or only read.</li>
+<li><strong>In Claude Code:</strong> <code>claude mcp add --transport http dayfile https://{{ base_domain }}/mcp</code>, then run <code>/mcp</code> to sign in.</li>
+<li><strong>With tokens instead:</strong> send <code>Authorization: Bearer &lt;username&gt;:&lt;read&gt;~&lt;write&gt;</code>: your username, a colon, then a read token and a write token joined with a tilde. Leave out the tilde and the write token for read-only access.</li>
+<li><strong>Your log's own address:</strong> <code>https://&lt;username&gt;.{{ base_domain }}/mcp</code> works the same way. There, send the tokens without the <code>&lt;username&gt;:</code> prefix.</li>
 <li><strong>Locally:</strong> <code>pip install "dayfile[mcp]"</code> adds the <code>dayfile mcp</code> command, which uses <code>DAYFILE_URL</code>, <code>DAYFILE_READ_TOKEN</code> and <code>DAYFILE_WRITE_TOKEN</code>.</li>
 </ul>
 <p>Apps you connect by signing in are listed under <a href="/account/tokens">Tokens</a>, where you can disconnect them at any time.</p>
