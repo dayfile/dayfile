@@ -23,6 +23,11 @@ docker compose up -d
 docker compose exec dayfile dayfile --url https://feeds.example.com token create --labels self
 ```
 
+`DAYFILE_DOMAIN` is the web address your server will have: a domain or subdomain you own (replace `feeds.example.com`),
+with its DNS A record pointing at the server's public IP and ports 80 and 443 reachable from the internet. Caddy uses it
+to get a free HTTPS certificate. No domain? Use `compose.proxy.yaml` below behind your own proxy, the `pip install` route,
+or try it locally with `DAYFILE_DOMAIN=localhost` (Caddy issues itself a certificate, so browsers and feed readers warn).
+
 Already running Traefik, Nginx Proxy Manager or your own Caddy? Use `docker compose -f compose.proxy.yaml up -d`
 instead: it starts only dayfile, published on `127.0.0.1:8000`, and you point your proxy at it. The proxy must send
 `X-Forwarded-Proto` and `X-Forwarded-For` (most do by default) so feed links say `https://`.
