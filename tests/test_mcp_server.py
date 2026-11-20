@@ -85,3 +85,11 @@ def test_retract_hides_an_event_and_retracting_a_close_reopens_the_todo(request_
     run(m.retract_event(request_fn, closing["id"]))
     reopened = run(m.list_events(request_fn, [], "open", None, 20))
     assert [e["title"] for e in reopened] == ["Pay rent"]
+
+
+def test_server_reports_the_installed_version(request_fn):
+    from importlib.metadata import version
+
+    assert m._version() == version("dayfile") != ""
+    server = m.build_server(request_fn)
+    assert server._lowlevel_server.version == version("dayfile")

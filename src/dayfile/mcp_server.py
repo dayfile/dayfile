@@ -26,6 +26,16 @@ class DayfileError(Exception):
     """The log refused or could not be reached; the message goes back to the assistant."""
 
 
+def _version() -> str:
+    """The installed dayfile version, for the MCP handshake."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("dayfile")
+    except PackageNotFoundError:
+        return ""
+
+
 def http_request(url: str, read_token: str | None, write_token: str | None) -> Request:
     """Return a requester for the dayfile API at `url`: reads use one token, writes the other."""
 
@@ -136,7 +146,7 @@ def build_server(request: Request) -> Any:
     from mcp.server.mcpserver.exceptions import ToolError
     from mcp.types import ToolAnnotations
 
-    server = MCPServer("dayfile", instructions=INSTRUCTIONS)
+    server = MCPServer("dayfile", instructions=INSTRUCTIONS, version=_version())
 
     def guarded(fn: Callable[..., Any]) -> Callable[..., Any]:
         """Show the assistant a refusal's message instead of a generic crash."""

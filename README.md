@@ -82,6 +82,8 @@ curl -N -H "Authorization: Bearer $READ_TOKEN" http://127.0.0.1:8000/events/stre
 curl -H "Authorization: Bearer $WRITE_TOKEN" -d @event.json -H 'content-type: application/json' http://127.0.0.1:8000/events
 ```
 
+The stream sends only events that arrive after you connect. To catch up on older ones, read `/events?since_seq=<n>` first (`0` starts from the beginning), then follow the stream.
+
 See the JSON API section of [docs/SPEC.md](https://github.com/dayfile/dayfile/blob/master/docs/SPEC.md).
 
 ## Commands

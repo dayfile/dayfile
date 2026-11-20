@@ -175,6 +175,10 @@ Every adapter produces the same envelope. Adapters set `source.id` and `source.r
 
 Google Voice forwards (sender at `txt.voice.google.com`) differ: the subject carries no content, so `title` is the first line of the SMS text, `body` is the whole text with the Voice link header and footer removed, `tags` is `["sms"]`, and `payload` is `{from_name, from_number}`. The `todo:` prefix is read from the SMS text.
 
+### Local files and the bare address
+
+A database file that `dayfile` creates is mode 0600 (owner only), since it holds private events and token hashes; an existing file keeps its mode. `GET /` on the core server redirects to `/docs` (307).
+
 ### CloudEvents (M8)
 
 `GET /feed.cloudevents` (and `/t/<token>/feed.cloudevents`) exports the same filtered, audience-checked page as the other feeds, in the CloudEvents 1.0 JSON batch format (`application/cloudevents-batch+json`), with the next page in a `Link: <...>; rel="next"` header. `POST /events` also accepts `application/cloudevents+json` (one event) and `application/cloudevents-batch+json` (an array). Binary and other event formats are not supported.

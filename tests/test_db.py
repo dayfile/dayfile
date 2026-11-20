@@ -93,3 +93,17 @@ def test_duplicate_source_ref_rejected(conn):
     insert_event(conn, source_ref="r1")
     with pytest.raises(sqlite3.IntegrityError):
         insert_event(conn, id="01JC8Z5A1B2C3D4E5F6G7H8J9K", source_ref="r1")
+
+
+def test_new_database_file_is_private(tmp_path):
+    path = tmp_path / "log.db"
+    connect(path).close()
+    assert path.stat().st_mode & 0o777 == 0o600
+
+
+def test_existing_database_file_keeps_its_mode(tmp_path):
+    path = tmp_path / "log.db"
+    path.touch(mode=0o640)
+    path.chmod(0o640)
+    connect(path).close()
+    assert path.stat().st_mode & 0o777 == 0o640
