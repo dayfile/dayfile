@@ -375,6 +375,8 @@ def create_web_app(
     @app.api_route("/status", methods=["GET", "HEAD"], include_in_schema=False)
     async def status_page(request: Request) -> HTMLResponse:
         """A readable status: this site answered, and the API is asked just now."""
+        if single_log:  # it describes the hosted service; a self-hosted server has /healthz
+            raise HTTPException(404)
         api = await run_in_threadpool(api_probe)
         robot = await run_in_threadpool(uptime) if uptime else None
         return page(

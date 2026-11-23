@@ -116,14 +116,15 @@ def test_a_post_from_another_site_is_refused(srv):
     assert r.status_code == 403
 
 
-@pytest.mark.parametrize("path", ["/demo", "/pricing", "/terms", "/privacy", "/docs"])
+@pytest.mark.parametrize("path", ["/demo", "/pricing", "/terms", "/privacy", "/docs", "/status"])
 def test_hosted_service_pages_are_not_there(srv, path):
     assert srv.web().get(path).status_code == 404
 
 
 def test_the_footer_is_not_the_hosted_one(srv):
     page = srv.web().get("/login").text
-    assert "Pricing" not in page and "Terms" not in page and "mailto:" not in page
+    assert "Pricing" not in page and "Terms" not in page and "Status" not in page
+    assert "mailto:" not in page
 
 
 def test_hosted_mode_is_unchanged(srv):
