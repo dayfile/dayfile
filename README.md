@@ -79,7 +79,8 @@ A feed URL answers two questions: **which view** of the log, and **who is asking
 curl -H "Authorization: Bearer $READ_TOKEN" 'http://127.0.0.1:8000/events?tag=todo&status=open'
 curl -H "Authorization: Bearer $READ_TOKEN" 'http://127.0.0.1:8000/events?since_seq=42&wait=25'   # long-poll
 curl -N -H "Authorization: Bearer $READ_TOKEN" http://127.0.0.1:8000/events/stream               # live, SSE
-curl -H "Authorization: Bearer $WRITE_TOKEN" -d @event.json -H 'content-type: application/json' http://127.0.0.1:8000/events
+curl -H "Authorization: Bearer $WRITE_TOKEN" -H 'content-type: application/json' \
+     -d '{"title": "backup finished", "tags": ["backup"]}' http://127.0.0.1:8000/events   # only title is required
 ```
 
 The stream sends only events that arrive after you connect. To catch up on older ones, read `/events?since_seq=<n>` first (`0` starts from the beginning), then follow the stream.
@@ -128,7 +129,7 @@ Self-hosting the hosted endpoint: set `DAYFILE_MCP=1` (needs `dayfile[mcp]`) and
 **Hosted:** [dayfile.app](https://dayfile.app), nothing to run: your log, feeds, tokens and MCP endpoint at `<username>.dayfile.cloud`.
 **Self-hosted:** your own server with one log in `$DAYFILE_DB` ([`deploy/selfhost`](https://github.com/dayfile/dayfile/blob/master/deploy/selfhost): `docker compose up` or systemd). The same code serves both. To run a multi-user service of your own, see [docs/CLOUD.md](https://github.com/dayfile/dayfile/blob/master/docs/CLOUD.md).
 
-The web app (`src/dayfile/web`, install with `pip install "dayfile[web]"`) is a separate process that talks to the API over HTTP. Accounts, GitHub sign-in, invite codes and the dashboard exist only in the multi-user setup (they create logs through an admin API). A self-hosted server runs the API, CLI and feeds, plus an optional read-only web view of your one log (`DAYFILE_SINGLE_LOG=1`, started by its compose file; see `deploy/selfhost`), signed in with a read token. To try it first, run `bash deploy/selfhost/try-web-view.sh` from a checkout, or `curl -fsSL https://raw.githubusercontent.com/dayfile/dayfile/master/deploy/selfhost/try-web-view.sh | bash` (Python 3.11 or newer): it installs dayfile into a temporary virtualenv, starts the API and the web view with sample events, prints a sign-in URL, and deletes everything on Ctrl-C. Billing is not built.
+The web app (`src/dayfile/web`, `pip install "dayfile[web]"`) is a separate process that talks to the API over HTTP. Accounts, GitHub sign-in and the dashboard exist only in the multi-user setup. A self-hosted server runs the API, CLI and feeds, plus an optional read-only web view of your one log: set `DAYFILE_SINGLE_LOG=1` and sign in with a read token ([`deploy/selfhost`](https://github.com/dayfile/dayfile/blob/master/deploy/selfhost)). Try it with sample data: `bash deploy/selfhost/try-web-view.sh`. Billing is not built.
 
 ## Security notes
 

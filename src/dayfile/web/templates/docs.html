@@ -25,6 +25,18 @@
   -H "content-type: application/json" \
   -d '{"title":"Hello"}'</code></pre>
 <p>It answers <code>201</code> with the stored event. Only <code>title</code> is required. dayfile fills in the id, the time, and the source when your write token has exactly one. Each quick post is a new event. To make retries safe, send the full form with a <code>source.id</code> and <code>ref</code> (see Events): posting the same pair again returns the existing event with <code>200</code>.</p>
+<h3>Close a to-do</h3>
+<p>Tag an event <code>todo</code> and it stays open until another event closes it. The reply to the first post has its <code>id</code>:</p>
+<pre><code>curl -X POST https://USERNAME.dayfile.cloud/events \
+  -H "Authorization: Bearer WRITE_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"title":"Renew the domain","tags":["todo"]}'
+
+curl -X POST https://USERNAME.dayfile.cloud/events \
+  -H "Authorization: Bearer WRITE_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"title":"Domain renewed","body":"Through 2027.","refs":[{"rel":"completes","id":"ID_FROM_THE_FIRST_REPLY"}]}'</code></pre>
+<p>The first event never changes; it now reads as <code>closed</code>. Without a <code>title</code>, the closing event takes the first one's title. The title and body are where you say why.</p>
 <h3>Read it back</h3>
 <pre><code>curl -H "Authorization: Bearer READ_TOKEN" https://USERNAME.dayfile.cloud/events</code></pre>
 <p>For an RSS reader (any feed reader that understands Atom or JSON Feed) that cannot send headers, use the token in the path:</p>
@@ -35,10 +47,10 @@ https://USERNAME.dayfile.cloud/t/READ_TOKEN/feed.atom</code></pre>
 <h2>Events</h2>
 <div class="scroll"><table>
 <tr><th>Field</th><th></th><th>Meaning</th></tr>
-<tr><td><code>specversion</code></td><td>required</td><td><code>"dayfile/1"</code></td></tr>
-<tr><td><code>id</code></td><td>required</td><td>A ULID you choose. Time-sortable, and can be made offline.</td></tr>
-<tr><td><code>source</code></td><td>required</td><td><code>{"id", "ref"}</code>. <code>id</code> names the sender; <code>ref</code> is its own identifier, used to make posting idempotent.</td></tr>
-<tr><td><code>occurred_at</code></td><td>required</td><td>When it happened. UTC, <code>YYYY-MM-DDTHH:MM:SSZ</code>.</td></tr>
+<tr><td><code>specversion</code></td><td></td><td><code>"dayfile/1"</code>. Filled in if you leave it out.</td></tr>
+<tr><td><code>id</code></td><td></td><td>A ULID. dayfile makes one if you leave it out; send your own only to create events offline or to sign them.</td></tr>
+<tr><td><code>source</code></td><td></td><td><code>{"id", "ref"}</code>. <code>id</code> names the sender, <code>ref</code> is its own identifier, used to make posting idempotent. Filled in when your write token has exactly one source.</td></tr>
+<tr><td><code>occurred_at</code></td><td></td><td>When it happened. UTC, <code>YYYY-MM-DDTHH:MM:SSZ</code>. Defaults to now.</td></tr>
 <tr><td><code>title</code></td><td>required</td><td>Plain-text headline.</td></tr>
 <tr><td><code>body</code></td><td></td><td>Plain-text detail.</td></tr>
 <tr><td><code>visible_at</code></td><td></td><td>When it appears in feeds. Defaults to <code>occurred_at</code>; a future time holds it back.</td></tr>
