@@ -131,3 +131,9 @@ def test_hosted_mode_is_unchanged(srv):
     web = TestClient(create_web_app(fetch=srv.fetch, single_log=False), follow_redirects=False)
     assert web.get("/pricing").status_code == 200
     assert 'name="slug"' in web.get("/login").text
+
+
+def test_a_signed_in_page_has_no_link_to_itself(srv):
+    web = srv.web()
+    sign_in(srv, web)
+    assert "Your log" not in web.get("/log").text
