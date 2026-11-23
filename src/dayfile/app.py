@@ -508,6 +508,14 @@ def create_app(
 
     @app.post("/events")
     async def post_events(request: Request) -> JSONResponse:
+        return await accept_events(request, None)
+
+    @app.post("/events/{event_id}/close")
+    async def close_event(request: Request, event_id: str) -> JSONResponse:
+        """Close a to-do: appends an event that completes it, with an optional title and body."""
+        return await accept_events(request, event_id)
+
+    async def accept_events(request: Request, close_id: str | None) -> JSONResponse:
         tenant = gate(request)
         if isinstance(tenant, Response):
             return tenant
@@ -524,10 +532,15 @@ def create_app(
         except _TooLarge:
             return _error(413, f"request body too large (limit {max_body_bytes} bytes)")
         try:
-            body = json.loads(raw)
+            body = json.loads(raw) if raw.strip() or close_id is None else {}
         except ValueError:
             return _error(422, "body is not valid JSON")
         ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
+        if close_id is not None:
+            try:
+                body, ctype = _closing_event(close_id, body), ""
+            except ValueError as e:
+                return _error(422, str(e))
         if ctype in CE_TYPES:
             if (ctype == CE_TYPES[1]) != isinstance(body, list):
                 return _error(
@@ -578,6 +591,15 @@ def create_app(
         main = (tenancy.base_domain, tenancy.get) if isinstance(tenancy, DirectoryTenancy) else None
         mcp_http.mount(app, tenancy.resolve, authenticate, clock, issuer, main)
     return app
+
+
+def _closing_event(event_id: str, body: Any) -> dict[str, Any]:
+    """The event that completes `event_id`, from an optional title and body."""
+    if not re.fullmatch(r"[0-9A-HJKMNP-TV-Z]{26}", event_id):
+        raise ValueError("not an event id")
+    if not isinstance(body, dict) or set(body) - {"title", "body"}:
+        raise ValueError("send a JSON object with only a title and a body, or nothing")
+    return {"refs": [{"rel": "completes", "id": event_id}], **body}
 
 
 class _TooLarge(Exception):

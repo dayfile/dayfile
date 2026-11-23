@@ -107,3 +107,26 @@ def test_blank_or_missing_token_env_var_is_none(monkeypatch):
     assert cli.env_token("DAYFILE_WRITE_TOKEN") is None
     monkeypatch.delenv("DAYFILE_WRITE_TOKEN")
     assert cli.env_token("DAYFILE_WRITE_TOKEN") is None
+
+
+def test_close_builds_an_event_that_completes_the_target_with_a_note():
+    target = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    ev = cli.build_close_event(cli.parse_args(["close", target, "--note", "all green"]))
+    assert ev["refs"] == [{"rel": "completes", "id": target}]
+    assert ev["body"] == "all green" and "title" not in ev  # the title is inherited
+
+
+def test_close_writes_straight_to_the_database_and_closes_the_todo(tmp_path, capsys):
+    db_path = tmp_path / "d.db"
+    assert cli.main(["add", "Renew domain", "--todo", "--db", str(db_path)]) == 0
+    todo_id = capsys.readouterr().out.split()[0]
+    assert cli.main(["close", todo_id, "--note", "done", "--db", str(db_path)]) == 0
+    conn = connect(db_path)
+    try:
+        rows = conn.execute("SELECT count(*) FROM events").fetchone()[0]
+        status = conn.execute(
+            "SELECT 1 FROM lifecycle_edges WHERE target_id = ?", (todo_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+    assert rows == 2 and status is not None
