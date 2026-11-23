@@ -17,6 +17,8 @@ systemctl --user enable --now dayfile                    # add dayfile-email and
 or a write token. The session cookie is HTTPS-only, which browsers allow on `localhost`; on plain http elsewhere
 (a home network) add `Environment=DAYFILE_INSECURE_COOKIES=1` to the unit, or put a TLS proxy in front.
 
+**Try it first.** `bash try-web-view.sh` installs dayfile into a temporary virtualenv, starts the API and the web view with a few sample events, and prints a sign-in URL. Ctrl-C stops it and deletes everything. `FROM=<path or git URL>` tries a checkout instead of PyPI.
+
 The units expect the virtualenv above; change the `ExecStart` path if yours is elsewhere. Run `loginctl enable-linger $USER` to keep the
 services running when logged out. The server binds 127.0.0.1; put a TLS proxy in front before exposing it.
 Create tokens with `DAYFILE_DB=~/.local/share/dayfile/dayfile.db ~/.local/share/dayfile/venv/bin/dayfile token create --labels self`.

@@ -675,3 +675,11 @@ def test_selfhost_units_do_not_need_a_checkout():
         text = unit.read_text()
         assert "python_projects" not in text and "WorkingDirectory" not in text, unit.name
         assert "/usr/bin/env uv" not in text, unit.name
+
+
+def test_try_web_view_script_is_valid_bash_and_cleans_up():
+    script = DEPLOY / "selfhost" / "try-web-view.sh"
+    subprocess.run(["bash", "-n", str(script)], check=True)
+    text = script.read_text()
+    assert os.access(script, os.X_OK) and "trap cleanup EXIT" in text and "rm -rf" in text
+    assert "$HOME" not in text and "~/" not in text  # never leaves anything in a home directory
