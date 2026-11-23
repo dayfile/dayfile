@@ -8,11 +8,11 @@
 {% if github_enabled %}<div class="actions"><a class="button" href="/auth/github">Sign in with GitHub</a></div>
 {% endif %}
 <h2>Open your log</h2>
-<p class="lede">Enter the username (the part before .dayfile.cloud) and a <strong>read token</strong>. You can also paste a feed URL into the token field and leave the name empty.</p>
+{% if single_log %}<p class="lede">Enter a <strong>read token</strong> for this log. You can also paste a feed URL. Make one on the server with <code>dayfile token create --labels self</code>.</p>{% else %}<p class="lede">Enter the username (the part before .dayfile.cloud) and a <strong>read token</strong>. You can also paste a feed URL into the token field and leave the name empty.</p>{% endif %}
 {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
 <form class="stack" method="post" action="/login">
-  <label for="slug">Username</label>
-  <input id="slug" name="slug" value="{{ slug }}" placeholder="dogfood" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="63">
+  {% if not single_log %}<label for="slug">Username</label>
+  <input id="slug" name="slug" value="{{ slug }}" placeholder="dogfood" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="63">{% endif %}
   <label for="token">Read token or feed URL</label>
   <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" maxlength="300" required>
   <div class="actions"><button type="submit">Open log</button></div>

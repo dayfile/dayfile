@@ -649,8 +649,25 @@ def test_containers_trust_the_proxy_so_feed_links_say_https():
 
 def test_selfhost_proxy_compose_publishes_only_on_loopback():
     compose = yaml.safe_load((DEPLOY / "selfhost" / "compose.proxy.yaml").read_text())
-    assert set(compose["services"]) == {"dayfile"}
+    assert set(compose["services"]) == {"dayfile", "web"}
     assert compose["services"]["dayfile"]["ports"] == ["127.0.0.1:8000:8000"]
+    assert compose["services"]["web"]["ports"] == ["127.0.0.1:8001:8001"]
+
+
+def test_selfhost_web_service_is_single_log_and_has_no_data_volume():
+    for name in ("compose.yaml", "compose.proxy.yaml"):
+        web = yaml.safe_load((DEPLOY / "selfhost" / name).read_text())["services"]["web"]
+        assert web["environment"]["DAYFILE_SINGLE_LOG"] == "1"
+        assert web["environment"]["DAYFILE_API_URL"] == "http://dayfile:8000"
+        assert "volumes" not in web  # it reaches the log only through the API
+        assert "8001" in web["healthcheck"]["test"][-1]
+
+
+def test_selfhost_caddy_splits_the_api_from_the_web_view():
+    text = (DEPLOY / "selfhost" / "Caddyfile").read_text()
+    assert "reverse_proxy dayfile:8000" in text and "reverse_proxy web:8001" in text
+    for path in ("/events", "/feed.*", "/t/*", "/mcp", "/healthz"):
+        assert path in text.split("handle @api")[0]
 
 
 def test_selfhost_units_do_not_need_a_checkout():
@@ -658,3 +675,11 @@ def test_selfhost_units_do_not_need_a_checkout():
         text = unit.read_text()
         assert "python_projects" not in text and "WorkingDirectory" not in text, unit.name
         assert "/usr/bin/env uv" not in text, unit.name
+
+
+def test_try_web_view_script_is_valid_bash_and_cleans_up():
+    script = DEPLOY / "selfhost" / "try-web-view.sh"
+    subprocess.run(["bash", "-n", str(script)], check=True)
+    text = script.read_text()
+    assert os.access(script, os.X_OK) and "trap cleanup EXIT" in text and "rm -rf" in text
+    assert "$HOME" not in text and "~/" not in text  # never leaves anything in a home directory

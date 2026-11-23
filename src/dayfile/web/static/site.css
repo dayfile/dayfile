@@ -367,3 +367,5 @@ h3 small.down { color: var(--warn); }
 .account-json summary { display: inline-block; list-style: none; cursor: pointer; }
 .account-json summary::-webkit-details-marker { display: none; }
 .account-json pre { max-height: 22rem; overflow: auto; margin: 12px 0 0; }
+footer.solo .wrap { grid-template-columns: 1fr auto; }
+footer.solo .copy { grid-column: auto; grid-row: auto; text-align: left; }

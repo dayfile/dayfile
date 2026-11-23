@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ slug }} · dayfile{% endblock %}
+{% block title %}{{ "Log" if single_log else slug }} · dayfile{% endblock %}
 {% block head %}<meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false,"selfRequestsOnly":true}'>{% endblock %}
 {% block main %}
 <div class="bar">
-  <h1>{{ slug }}</h1>
+  <h1>{{ "Log" if single_log else slug }}</h1>
   {% if nav_state == "account" %}<a class="button" id="post-open" href="/log/post">Post</a>{% else %}<form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form>{% endif %}
 </div>
 {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}

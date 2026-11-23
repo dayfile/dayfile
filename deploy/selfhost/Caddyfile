@@ -1,5 +1,12 @@
 {$DAYFILE_DOMAIN} {
-	reverse_proxy dayfile:8000
+	# The API and the feeds go to dayfile; everything else is the web view of the log.
+	@api path /events /events/* /feed /feed.* /f/* /t/* /usage /mcp /mcp/* /.well-known/oauth-protected-resource/* /docs /openapi.json /healthz
+	handle @api {
+		reverse_proxy dayfile:8000
+	}
+	handle {
+		reverse_proxy web:8001
+	}
 	# Keep tokens out of the proxy's own access log.
 	log {
 		output discard
