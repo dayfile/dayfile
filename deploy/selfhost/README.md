@@ -16,7 +16,7 @@ it. `FROM=<path or git URL>` tries a checkout instead of PyPI. Needs Python 3.11
 
 ```
 pip install "dayfile[web]"            # drop [web] if you do not want the web view; add "dayfile[mcp]" for the assistant server
-export DAYFILE_DB=~/dayfile.db        # where your log lives
+export DAYFILE_DB=~/dayfile.db        # the log file; any path you like, it is created on first use
 dayfile token create --labels self    # prints feed URLs once; the long part after /t/ is your read token
 dayfile add --db "$DAYFILE_DB" "hello"
 ```
@@ -33,9 +33,10 @@ by itself; add events with `dayfile add`, a script, or a write token
 (`dayfile token create --labels self --write-source adapter:cli`). The feeds work without the web view, at
 `http://127.0.0.1:8000/t/<read token>/feed.json` and `feed.atom`.
 
-The session cookie is HTTPS-only, which browsers allow on `localhost`. On plain http elsewhere (a home network) set
-`DAYFILE_INSECURE_COOKIES=1` for the web view, or put a TLS proxy in front. Both servers bind 127.0.0.1; put a TLS
-proxy in front before exposing them.
+Both servers listen only on this machine (127.0.0.1). To use the web view from another computer, put an HTTPS proxy
+in front (section 3 has one). Without HTTPS, browsers drop the sign-in cookie on any address except `localhost`, so
+signing in from `http://192.168.1.20:8001`, say, fails. On a network you trust, set `DAYFILE_INSECURE_COOKIES=1` for
+the web view to allow it.
 
 ### Keep it running with systemd
 
@@ -51,11 +52,12 @@ systemctl --user enable --now dayfile dayfile-web
 loginctl enable-linger $USER                                # keep them running when you are logged out
 ```
 
-The units keep your database at `~/.local/share/dayfile/dayfile.db`; if you already ran it by hand, copy your file
-there first. Create tokens with
+The units set the database path in their `Environment=DAYFILE_DB=` line, by default
+`~/.local/share/dayfile/dayfile.db`. To keep your file elsewhere, edit that line in each unit (and use the same path
+when you run `dayfile` yourself); if you already have a log, copy it there or point the units at it. Create tokens with
 `DAYFILE_DB=~/.local/share/dayfile/dayfile.db ~/.local/share/dayfile/venv/bin/dayfile token create --labels self`.
-The units expect the virtualenv above; change the `ExecStart` path if yours is elsewhere. For plain http outside
-localhost add `Environment=DAYFILE_INSECURE_COOKIES=1` to `dayfile-web.service`.
+The units expect the virtualenv above; change the `ExecStart` path if yours is elsewhere. To allow sign-in over plain
+http from another computer (see above), add `Environment=DAYFILE_INSECURE_COOKIES=1` to `dayfile-web.service`.
 
 Optional workers, as `dayfile-email.service` (Gmail or Google Voice SMS over IMAP) and `dayfile-notify.service` (ntfy
 push). They read their settings from `~/.config/dayfile/env`:
