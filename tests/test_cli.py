@@ -130,3 +130,9 @@ def test_close_writes_straight_to_the_database_and_closes_the_todo(tmp_path, cap
     finally:
         conn.close()
     assert rows == 2 and status is not None
+
+
+def test_retract_builds_an_event_that_retracts_the_target():
+    target = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    ev = cli.build_close_event(cli.parse_args(["retract", target, "--note", "typo"]))
+    assert ev["refs"] == [{"rel": "retracts", "id": target}] and ev["body"] == "typo"

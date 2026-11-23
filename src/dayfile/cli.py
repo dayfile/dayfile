@@ -42,14 +42,22 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     add.add_argument(
         "--key-dir", default=None, help="private key directory (default: ~/.config/dayfile/keys)"
     )
-    close = sub.add_parser("close", help="close a to-do, optionally saying why")
-    close.add_argument("id", help="the id of the to-do")
-    close.add_argument("--note", help="why it was closed")
-    close.add_argument(
-        "--db",
-        default=None,
-        help="write straight to this database file instead of posting to --url (operator mode)",
-    )
+    for name, text, what in (
+        ("close", "close a to-do, optionally saying why", "the to-do"),
+        (
+            "retract",
+            "retract a mistaken event (or undo a close), optionally saying why",
+            "the event",
+        ),
+    ):
+        refer = sub.add_parser(name, help=text)
+        refer.add_argument("id", help=f"the id of {what}")
+        refer.add_argument("--note", help="why")
+        refer.add_argument(
+            "--db",
+            default=None,
+            help="write straight to this database file instead of posting to --url (operator mode)",
+        )
     poll = sub.add_parser("poll-email", help="poll a Gmail folder and ingest into the database")
     poll.add_argument("--folder", default="SMS")
     poll.add_argument(
@@ -217,14 +225,14 @@ def build_event(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def build_close_event(args: argparse.Namespace) -> dict[str, Any]:
-    """Build the event that completes `args.id`; its title is inherited from the to-do."""
+    """Build the event that completes (close) or retracts `args.id`; the title is inherited."""
     event_id = new_ulid()
     ev: dict[str, Any] = {
         "specversion": "dayfile/1",
         "id": event_id,
         "source": {"id": "adapter:cli", "ref": event_id},
         "occurred_at": now(),
-        "refs": [{"rel": "completes", "id": args.id}],
+        "refs": [{"rel": "retracts" if args.command == "retract" else "completes", "id": args.id}],
     }
     if args.note:
         ev["body"] = args.note
@@ -312,7 +320,7 @@ def main(
         return _key(args)
     if args.command == "notify":
         return _notify(args, publish)
-    event = build_close_event(args) if args.command == "close" else build_event(args)
+    event = build_close_event(args) if args.command in ("close", "retract") else build_event(args)
     if getattr(args, "sign", None):
         from pathlib import Path
 

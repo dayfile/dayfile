@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Closing a to-do can say why: `POST /events/{id}/close` with an optional `title` and `body`, `dayfile close <id> --note "..."`, an optional `note` on the assistant's `dayfile_close_todo`, and an optional *Why?* field on the web Close button. History shows the note.
+- Closing a to-do, or retracting a mistaken event, can say why: `POST /events/{id}/close` and `/retract` with an optional `title` and `body`, `dayfile close` and `dayfile retract` with `--note`, an optional `note` on the assistant's `dayfile_close_todo` and `dayfile_retract_event`, and an optional *Why?* field on the web Close button. History shows the note.
 - Docs: only `title` is needed to post; the server fills in the rest.
 
 ## 0.2.0

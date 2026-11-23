@@ -139,9 +139,9 @@ async def close_todo(request: Request, event_id: str, note: str | None = None) -
     return await _refer(request, "completes", event_id, note)
 
 
-async def retract_event(request: Request, event_id: str) -> dict[str, Any]:
+async def retract_event(request: Request, event_id: str, note: str | None = None) -> dict[str, Any]:
     """Retract an event (or undo a close) by appending an event that retracts it."""
-    return await _refer(request, "retracts", event_id)
+    return await _refer(request, "retracts", event_id, note)
 
 
 def build_server(request: Request) -> Any:
@@ -207,10 +207,10 @@ def build_server(request: Request) -> Any:
 
     @server.tool()
     @guarded
-    async def dayfile_retract_event(id: str) -> dict[str, Any]:
+    async def dayfile_retract_event(id: str, note: str | None = None) -> dict[str, Any]:
         """Retract an event that was a mistake. Nothing is deleted; a retracting event is
-        appended. Retracting a closing event reopens its target."""
-        return await retract_event(request, id)
+        appended. Retracting a closing event reopens its target. `note` says why."""
+        return await retract_event(request, id, note)
 
     return server
 
