@@ -321,3 +321,37 @@ def test_close_endpoint_needs_a_write_token_and_a_real_target(client, conn):
     assert client.post(f"/events/{todo['id']}/close", headers=bearer(read)).status_code == 403
     missing = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     assert client.post(f"/events/{missing}/close", headers=bearer(t)).status_code == 422
+
+
+def test_retract_endpoint_hides_an_event_and_undoing_a_close_reopens_it(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    read = create_token(conn, ["self"])
+    todo = _open_todo(client, t)
+    closing = client.post(f"/events/{todo['id']}/close", headers=bearer(t)).json()
+    r = client.post(
+        f"/events/{closing['id']}/retract", json={"body": "closed by mistake"}, headers=bearer(t)
+    )
+    assert r.status_code == 201
+    assert r.json()["refs"] == [{"rel": "retracts", "id": closing["id"]}]
+    assert r.json()["body"] == "closed by mistake"
+    status = {
+        e["id"]: e.get("status")
+        for e in client.get("/events", headers=bearer(read)).json()["events"]
+    }
+    assert status[todo["id"]] == "open"  # retracting the close reopened it
+    client.post(f"/events/{todo['id']}/retract", headers=bearer(t))
+    url = "/events?status=retracted"
+    assert todo["id"] in [e["id"] for e in client.get(url, headers=bearer(read)).json()["events"]]
+
+
+def test_retract_endpoint_has_the_same_limits_as_close(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    todo = _open_todo(client, t)
+    assert client.post(f"/events/{todo['id']}/retract").status_code == 401
+    assert (
+        client.post(
+            f"/events/{todo['id']}/retract", json={"tags": ["x"]}, headers=bearer(t)
+        ).status_code
+        == 422
+    )
+    assert client.post("/events/nope/retract", headers=bearer(t)).status_code == 422
