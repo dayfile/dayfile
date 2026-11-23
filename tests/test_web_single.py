@@ -137,3 +137,8 @@ def test_a_signed_in_page_has_no_link_to_itself(srv):
     web = srv.web()
     sign_in(srv, web)
     assert "Your log" not in web.get("/log").text
+
+
+def test_the_footer_says_what_this_is_and_links_the_source(srv):
+    page = srv.web().get("/login").text
+    assert "AGPL-3.0" in page and "https://github.com/dayfile/dayfile" in page
