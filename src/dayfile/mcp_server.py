@@ -123,16 +123,20 @@ async def add_event(
     return stored[0] if isinstance(stored, list) else stored
 
 
-async def _refer(request: Request, rel: str, event_id: str) -> dict[str, Any]:
+async def _refer(
+    request: Request, rel: str, event_id: str, note: str | None = None
+) -> dict[str, Any]:
     """Append an event that points at `event_id`; its title is inherited from the target."""
-    event = {"specversion": "dayfile/1", "refs": [{"rel": rel, "id": event_id}]}
+    event: dict[str, Any] = {"specversion": "dayfile/1", "refs": [{"rel": rel, "id": event_id}]}
+    if note:
+        event["body"] = note
     stored = _ok(*await request("POST", "/events", [event]))
     return stored[0] if isinstance(stored, list) else stored
 
 
-async def close_todo(request: Request, event_id: str) -> dict[str, Any]:
-    """Close a to-do by appending an event that completes it."""
-    return await _refer(request, "completes", event_id)
+async def close_todo(request: Request, event_id: str, note: str | None = None) -> dict[str, Any]:
+    """Close a to-do by appending an event that completes it; `note` says why."""
+    return await _refer(request, "completes", event_id, note)
 
 
 async def retract_event(request: Request, event_id: str) -> dict[str, Any]:
@@ -196,9 +200,10 @@ def build_server(request: Request) -> Any:
 
     @server.tool()
     @guarded
-    async def dayfile_close_todo(id: str) -> dict[str, Any]:
-        """Close an open to-do by id. Nothing is deleted; a closing event is appended."""
-        return await close_todo(request, id)
+    async def dayfile_close_todo(id: str, note: str | None = None) -> dict[str, Any]:
+        """Close an open to-do by id. Nothing is deleted; a closing event is appended.
+        `note` says why it was closed and is shown with the closing step."""
+        return await close_todo(request, id, note)
 
     @server.tool()
     @guarded

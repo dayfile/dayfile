@@ -1324,7 +1324,7 @@ def create_web_app(
 
         @app.post("/log/event/{event_id}/{action}")
         async def close_event(
-            request: Request, event_id: str, action: str, title: str = Form("")
+            request: Request, event_id: str, action: str, note: str = Form("")
         ) -> Response:
             """Close an event or retract it by posting a new event that refers back to it."""
             if action not in CLOSERS or not ULID.fullmatch(event_id):
@@ -1336,7 +1336,9 @@ def create_web_app(
                 return who
             if not who["slug"] or control is None:
                 return RedirectResponse("/account", status_code=303)
-            event = {"refs": [{"rel": CLOSERS[action], "id": event_id}]}  # the title is inherited
+            event: dict[str, Any] = {"refs": [{"rel": CLOSERS[action], "id": event_id}]}
+            if action == "close" and note.strip():  # the title is inherited; the note says why
+                event["body"] = note.strip()[:1000]
             sent = await send_event(request, who["slug"], event)
             if isinstance(sent, Response):
                 return sent
@@ -1486,7 +1488,7 @@ def create_web_app(
                 if ref["rel"] in LIFECYCLE:
                     by_target.setdefault(ref["id"], []).append((ref["rel"], event))
 
-        def chain(event_id: str, depth: int = 0) -> list[dict[str, Any]]:
+        def chain(event_id: str, title: str, depth: int = 0) -> list[dict[str, Any]]:
             if depth > 6:
                 return []
             return [
@@ -1494,12 +1496,13 @@ def create_web_app(
                     "event": c,
                     "rel": rel,
                     "live": c.get("status") != "retracted",
-                    "children": chain(c["id"], depth + 1),
+                    "retitled": c["title"] if c["title"] != title else "",
+                    "children": chain(c["id"], c["title"], depth + 1),
                 }
                 for rel, c in by_target.get(event_id, [])
             ]
 
-        return {e["id"]: chain(e["id"]) for e in shown if e["id"] in by_target}
+        return {e["id"]: chain(e["id"], e["title"]) for e in shown if e["id"] in by_target}
 
     def cursors(body: Any, filters: Filters) -> dict[str, Any]:
         query = [("after", body["cursor"]), ("released", body["released_cursor"])]

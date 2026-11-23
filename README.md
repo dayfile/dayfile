@@ -81,6 +81,7 @@ curl -H "Authorization: Bearer $READ_TOKEN" 'http://127.0.0.1:8000/events?since_
 curl -N -H "Authorization: Bearer $READ_TOKEN" http://127.0.0.1:8000/events/stream               # live, SSE
 curl -H "Authorization: Bearer $WRITE_TOKEN" -H 'content-type: application/json' \
      -d '{"title": "backup finished", "tags": ["backup"]}' http://127.0.0.1:8000/events   # only title is required
+curl -X POST -H "Authorization: Bearer $WRITE_TOKEN" -d '{"body": "why it is done"}' -H 'content-type: application/json' http://127.0.0.1:8000/events/<id>/close      # close a to-do
 ```
 
 The stream sends only events that arrive after you connect. To catch up on older ones, read `/events?since_seq=<n>` first (`0` starts from the beginning), then follow the stream.

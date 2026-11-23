@@ -369,3 +369,7 @@ h3 small.down { color: var(--warn); }
 .account-json pre { max-height: 22rem; overflow: auto; margin: 12px 0 0; }
 footer.solo .wrap { grid-template-columns: 1fr auto; }
 footer.solo .copy { grid-column: auto; grid-row: auto; text-align: left; }
+.act input[name="note"] { width: 12rem; max-width: 100%; padding: 3px 8px; font-size: .88rem; margin-right: 6px; }
+.chain .why { font-weight: 600; }
+.chain .why-text { margin: .2rem 0 0 0; color: var(--muted); }
+.chain .why-text p { margin: 0; }

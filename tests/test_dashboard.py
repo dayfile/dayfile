@@ -869,6 +869,20 @@ def live(db, gh, control, core):
     return make_web(db, gh, control, post=call("post")), call("get")
 
 
+def test_close_with_a_reason_saves_it_and_history_shows_it(live, db, core):
+    web, _ = live
+    web.app.state.fetch = lambda slug, token, params: live[1](slug, token, params)
+    with_log(web, db)
+    web.post("/log/post", data={"title": "Dentist", "tags": "todo"}, headers=POST)
+    web.get("/log")
+    original = re.search(r"/log/event/([0-9A-Z]{26})/close", web.get("/log?fresh=1").text).group(1)
+    r = web.post(f"/log/event/{original}/close", data={"note": "Booked for Friday."}, headers=POST)
+    assert r.status_code == 303
+    web.get("/log")
+    page = web.get("/log?fresh=1").text
+    assert "Booked for Friday." in page
+
+
 def test_history_shows_the_chain_and_undoing_steps_changes_the_status(live, db, core):
     web, _ = live
     app_fetch = web.app.state
