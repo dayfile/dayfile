@@ -8,12 +8,12 @@ A dayfile instance holds one append-only **event log**. Producers (adapters, dev
 
 Machine-readable definition: `schema/event.schema.json`. Example events: `examples/events.jsonl`.
 
-| Field | Req | Meaning |
+| Field | Req (filled: the server adds it to an unsigned post that omits it) | Meaning |
 |---|---|---|
-| `specversion` | yes | `"dayfile/1"`. Envelope revision, inside the signature. Adding an optional field does not bump it. Changing or removing a field's meaning does. |
-| `id` | yes | ULID chosen by the author. Time-sortable, generated offline if needed. |
-| `source` | yes | `{id, ref?}`. `id` names the adapter or device. `ref` is the external identifier, used for idempotent ingest. |
-| `occurred_at` | yes | When it happened in the world. |
+| `specversion` | filled | `"dayfile/1"`. The server fills it in for an unsigned post that omits it. Envelope revision, inside the signature. Adding an optional field does not bump it. Changing or removing a field's meaning does. |
+| `id` | filled | ULID. The server makes one for an unsigned post that omits it; an author sends their own to generate offline or to sign (the id is inside the signature). |
+| `source` | filled | `{id, ref?}`. Filled in with the write token's source when it has exactly one. `id` names the adapter or device. `ref` is the external identifier, used for idempotent ingest. |
+| `occurred_at` | stored | When it happened in the world. The server uses the time of the post for an unsigned post that omits it. |
 | `visible_at` | no | When the event appears in feeds. Defaults to `occurred_at`. A future value gives time-release. |
 | `expires_at` | no | End of relevance. Renderers drop the event from rolling feeds after this. |
 | `title` | yes | Plain-text headline. Every event has one. |
