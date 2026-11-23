@@ -41,6 +41,9 @@ echo "Open http://localhost:$WEB and paste this into the sign-in box:"
 echo
 echo "  $READ_URL"
 echo
-echo "A new event is added every 15 seconds so you can watch the page update. Ctrl-C to stop and clean up."
-n=0
-while sleep 15; do n=$((n + 1)); dayfile add --db "$DAYFILE_DB" "live update $n" >/dev/null; done
+echo "Add an event from another terminal and it shows up on the page:"
+echo
+echo "  $T/venv/bin/dayfile add --db $T/day.db \"your title\""
+echo
+echo "Ctrl-C stops everything and deletes it."
+wait
