@@ -3,6 +3,8 @@
     <time datetime="{{ n.event.visible_at }}" title="{{ n.event.visible_at|stamp }}">{{ n.event.visible_at|ago }}</time>
     <code class="ref" title="Event {{ n.event.id }}">{{ n.event.id[-6:]|lower }}</code>
     {% if not n.live %}<em>undone</em>{% endif %}
+    {% if n.retitled %}<strong class="why">{{ n.retitled }}</strong>{% endif %}
+    {% if n.event.body %}<div class="why-text">{{ n.event.body|markdown }}</div>{% endif %}
     {% if acct and n.live %}<form method="post" action="/log/event/{{ n.event.id }}/retract"><button class="link" type="submit" title="Undo this step by retracting it">Undo</button></form>{% endif %}
     {% if n.children %}{{ chain(n.children, acct) }}{% endif %}</li>{% endfor %}</ul>{% endmacro %}
 <article class="event{% if e.status %} status-{{ e.status }}{% endif %}">
@@ -21,7 +23,7 @@
   {% if e.refs %}<ul>{% for r in e.refs %}<li>{{ r.rel }} <code class="ref" title="Event {{ r.id }}">{{ r.id[-6:]|lower }}</code></li>{% endfor %}</ul>{% endif %}
   <div class="meta"><span title="Source: who sent this event">source: {{ e.source.id }}{% if e.tags %}, tags:{% endif %}</span>{% for t in e.tags %}<span class="chip" title="Tag: a free label for grouping events; filter by it above">{{ t }}</span>{% endfor %}</div>
   {% if nav_state == "account" and e.status == "open" %}
-  <div class="act"><form method="post" action="/log/event/{{ e.id }}/close"><button class="ghost" type="submit">Close</button></form></div>
+  <div class="act"><form method="post" action="/log/event/{{ e.id }}/close"><input type="text" name="note" maxlength="1000" placeholder="Why? (optional)" aria-label="Why it is closed (optional)" autocomplete="off"><button class="ghost" type="submit">Close</button></form></div>
   {% endif %}
   {% set steps = history.get(e.id) if history is defined else none %}
   {% set can_retract = nav_state == "account" and e.status not in ("retracted", "superseded") %}

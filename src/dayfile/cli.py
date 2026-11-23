@@ -42,6 +42,22 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     add.add_argument(
         "--key-dir", default=None, help="private key directory (default: ~/.config/dayfile/keys)"
     )
+    for name, text, what in (
+        ("close", "close a to-do, optionally saying why", "the to-do"),
+        (
+            "retract",
+            "retract a mistaken event (or undo a close), optionally saying why",
+            "the event",
+        ),
+    ):
+        refer = sub.add_parser(name, help=text)
+        refer.add_argument("id", help=f"the id of {what}")
+        refer.add_argument("--note", help="why")
+        refer.add_argument(
+            "--db",
+            default=None,
+            help="write straight to this database file instead of posting to --url (operator mode)",
+        )
     poll = sub.add_parser("poll-email", help="poll a Gmail folder and ingest into the database")
     poll.add_argument("--folder", default="SMS")
     poll.add_argument(
@@ -208,6 +224,21 @@ def build_event(args: argparse.Namespace) -> dict[str, Any]:
     return ev
 
 
+def build_close_event(args: argparse.Namespace) -> dict[str, Any]:
+    """Build the event that completes (close) or retracts `args.id`; the title is inherited."""
+    event_id = new_ulid()
+    ev: dict[str, Any] = {
+        "specversion": "dayfile/1",
+        "id": event_id,
+        "source": {"id": "adapter:cli", "ref": event_id},
+        "occurred_at": now(),
+        "refs": [{"rel": "retracts" if args.command == "retract" else "completes", "id": args.id}],
+    }
+    if args.note:
+        ev["body"] = args.note
+    return ev
+
+
 def env_token(name: str) -> str | None:
     """Return the token in environment variable `name`, trimmed, or None if it is empty."""
     return (os.environ.get(name) or "").strip() or None
@@ -289,8 +320,8 @@ def main(
         return _key(args)
     if args.command == "notify":
         return _notify(args, publish)
-    event = build_event(args)
-    if args.sign:
+    event = build_close_event(args) if args.command in ("close", "retract") else build_event(args)
+    if getattr(args, "sign", None):
         from pathlib import Path
 
         from dayfile import signing

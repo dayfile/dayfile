@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Closing a to-do, or retracting a mistaken event, can say why: `POST /events/{id}/close` and `/retract` with an optional `title` and `body`, `dayfile close` and `dayfile retract` with `--note`, an optional `note` on the assistant's `dayfile_close_todo` and `dayfile_retract_event`, and an optional *Why?* field on the web Close button. History shows the note.
+- Docs: only `title` is needed to post; the server fills in the rest. The self-host README now goes from trying it, to running it by hand, to systemd and Docker, and explains `DAYFILE_DOMAIN`.
+- `try-web-view.sh` no longer adds events by itself; it prints the command to add one.
+
 ## 0.2.0
 
 - Self-hosting: an optional read-only web view of your one log. Set `DAYFILE_SINGLE_LOG=1` on the web app (`pip install "dayfile[web]"`, then `uvicorn dayfile.web:app`); sign in with a read token. The Docker setup in `deploy/selfhost` starts it behind Caddy, and `dayfile-web.service` runs it under systemd. `DAYFILE_INSECURE_COOKIES=1` is for plain http outside localhost. `deploy/selfhost/try-web-view.sh` tries it in one command with sample events and removes everything on exit.

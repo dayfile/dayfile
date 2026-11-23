@@ -273,3 +273,85 @@ def test_quick_post_does_not_complete_signed_events(client, conn):
     t = create_token(conn, ["self"], write_sources=["adapter:phone"])
     r = client.post("/events", json={"title": "x", "sig": "AAAA"}, headers=bearer(t))
     assert r.status_code == 422
+
+
+def _open_todo(client, t):
+    return client.post(
+        "/events", json={"title": "Renew domain", "tags": ["todo"]}, headers=bearer(t)
+    ).json()
+
+
+def test_close_endpoint_completes_a_todo_with_a_reason(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    todo = _open_todo(client, t)
+    r = client.post(
+        f"/events/{todo['id']}/close", json={"body": "Renewed through 2027."}, headers=bearer(t)
+    )
+    assert r.status_code == 201
+    closing = r.json()
+    assert closing["refs"] == [{"rel": "completes", "id": todo["id"]}]
+    assert closing["body"] == "Renewed through 2027." and closing["title"] == "Renew domain"
+    read = create_token(conn, ["self"])
+    events = client.get("/events", headers=bearer(read)).json()["events"]
+    assert next(e for e in events if e["id"] == todo["id"])["status"] == "closed"
+
+
+def test_close_endpoint_takes_no_body_or_an_own_title(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    a, b = _open_todo(client, t), _open_todo(client, t)
+    assert client.post(f"/events/{a['id']}/close", headers=bearer(t)).status_code == 201
+    r = client.post(f"/events/{b['id']}/close", json={"title": "Done"}, headers=bearer(t))
+    assert r.status_code == 201 and r.json()["title"] == "Done"
+
+
+def test_close_endpoint_refuses_anything_but_a_title_and_a_body(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    todo = _open_todo(client, t)
+    for body in ({"tags": ["x"]}, {"refs": []}, ["a"], "text"):
+        r = client.post(f"/events/{todo['id']}/close", json=body, headers=bearer(t))
+        assert r.status_code == 422
+    assert client.post("/events/not-an-id/close", headers=bearer(t)).status_code == 422
+
+
+def test_close_endpoint_needs_a_write_token_and_a_real_target(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    todo = _open_todo(client, t)
+    assert client.post(f"/events/{todo['id']}/close").status_code == 401
+    read = create_token(conn, ["self"])
+    assert client.post(f"/events/{todo['id']}/close", headers=bearer(read)).status_code == 403
+    missing = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    assert client.post(f"/events/{missing}/close", headers=bearer(t)).status_code == 422
+
+
+def test_retract_endpoint_hides_an_event_and_undoing_a_close_reopens_it(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    read = create_token(conn, ["self"])
+    todo = _open_todo(client, t)
+    closing = client.post(f"/events/{todo['id']}/close", headers=bearer(t)).json()
+    r = client.post(
+        f"/events/{closing['id']}/retract", json={"body": "closed by mistake"}, headers=bearer(t)
+    )
+    assert r.status_code == 201
+    assert r.json()["refs"] == [{"rel": "retracts", "id": closing["id"]}]
+    assert r.json()["body"] == "closed by mistake"
+    status = {
+        e["id"]: e.get("status")
+        for e in client.get("/events", headers=bearer(read)).json()["events"]
+    }
+    assert status[todo["id"]] == "open"  # retracting the close reopened it
+    client.post(f"/events/{todo['id']}/retract", headers=bearer(t))
+    url = "/events?status=retracted"
+    assert todo["id"] in [e["id"] for e in client.get(url, headers=bearer(read)).json()["events"]]
+
+
+def test_retract_endpoint_has_the_same_limits_as_close(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    todo = _open_todo(client, t)
+    assert client.post(f"/events/{todo['id']}/retract").status_code == 401
+    assert (
+        client.post(
+            f"/events/{todo['id']}/retract", json={"tags": ["x"]}, headers=bearer(t)
+        ).status_code
+        == 422
+    )
+    assert client.post("/events/nope/retract", headers=bearer(t)).status_code == 422

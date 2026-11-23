@@ -93,3 +93,16 @@ def test_server_reports_the_installed_version(request_fn):
     assert m._version() == version("dayfile") != ""
     server = m.build_server(request_fn)
     assert server._lowlevel_server.version == version("dayfile")
+
+
+def test_close_todo_can_say_why(request_fn):
+    stored = run(m.add_event(request_fn, "Renew domain", None, [], True, 0, None))
+    closing = run(m.close_todo(request_fn, stored["id"], "Renewed through 2027."))
+    assert closing["body"] == "Renewed through 2027."
+    assert run(m.get_event(request_fn, stored["id"]))["status"] == "closed"
+
+
+def test_retract_can_say_why(request_fn):
+    stored = run(m.add_event(request_fn, "Typo", None, [], False, 0, None))
+    retraction = run(m.retract_event(request_fn, stored["id"], "posted by mistake"))
+    assert retraction["body"] == "posted by mistake"
