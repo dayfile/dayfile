@@ -9,6 +9,19 @@ services:
       - dayfile-data:/data
     environment:
       DAYFILE_AUTH_URI: ${DAYFILE_AUTH_URI:-}
+  web:
+    # The web view of this one log: sign in with a read token. It reaches the log only through the API.
+    build: ../..
+    restart: unless-stopped
+    command: ["uvicorn", "dayfile.web:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+    environment:
+      DAYFILE_SINGLE_LOG: "1"
+      DAYFILE_API_URL: http://dayfile:8000
+    depends_on: [dayfile]
   email:
     build: ../..
     restart: unless-stopped
@@ -37,7 +50,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
-    depends_on: [dayfile]
+    depends_on: [dayfile, web]
 volumes:
   dayfile-data:
   caddy-data:

@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import FastAPI, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
@@ -35,7 +35,7 @@ from dayfile.web.accounts import control as control_mod
 from dayfile.web.accounts import grants, store
 from dayfile.web.accounts.github import GitHubError, GitHubOAuth
 from dayfile.web.client import ApiResult, Fetch, Post, http_fetch, http_post, http_status
-from dayfile.web.creds import TOKEN, parse_credentials
+from dayfile.web.creds import TOKEN, parse_credentials, parse_single_token
 from dayfile.web.history import INTERVAL, StatusHistory
 
 HERE = Path(__file__).parent
@@ -133,8 +133,13 @@ def create_web_app(
     status_db: str | Path | None = None,
     probe_every: float = INTERVAL,
     uptime: Callable[[], Any] | None = None,
+    single_log: bool | None = None,
 ) -> FastAPI:
     """Build the web app; the API address and domains default to the environment."""
+    if single_log is None:  # one self-hosted log: no usernames, accounts or hosted pages
+        single_log = os.environ.get("DAYFILE_SINGLE_LOG", "") == "1"
+    if os.environ.get("DAYFILE_INSECURE_COOKIES", "") == "1":  # plain http on a home network
+        secure_cookies = False
     base_domain = (base_domain or os.environ.get("DAYFILE_BASE_DOMAIN", "dayfile.cloud")).lower()
     site_origin = site_origin or os.environ.get("DAYFILE_SITE_ORIGIN", "https://dayfile.app")
     api_url = os.environ.get("DAYFILE_API_URL", "http://127.0.0.1:8000")
@@ -143,7 +148,7 @@ def create_web_app(
     if control is None:
         send = control_mod.from_environment(api_url, os.environ.get("DAYFILE_ADMIN_SECRET_FILE"))
         control = control_mod.Control(send) if send else None
-    accounts_on = bool(accounts_db and github)
+    accounts_on = bool(accounts_db and github) and not single_log
     viewer_hook: Callable[[Request], Any] | None = None
     status_db = status_db or os.environ.get("DAYFILE_STATUS_DB")
     if not status_db and accounts_db:
@@ -216,6 +221,7 @@ def create_web_app(
         markdown=present.markdown,
     )
     templates.env.globals["github_enabled"] = accounts_on
+    templates.env.globals["single_log"] = single_log
     # Static files are cached for a week, so the page links carry a hash of the file they name.
     templates.env.globals["asset_v"] = {
         name: hashlib.sha256((HERE / "static" / name).read_bytes()).hexdigest()[:10]
@@ -283,6 +289,8 @@ def create_web_app(
         origin = request.headers.get("origin")
         if origin == site_origin:
             return True
+        if single_log and origin and origin != "null":  # no fixed public address: the page's own
+            return urlsplit(origin).netloc == request.headers.get("host")
         if origin is None or origin == "null":
             # Browsers send "Origin: null" on form posts when the page's referrer policy is
             # no-referrer (ours is), so fall back to Fetch Metadata, which pages cannot forge.
@@ -309,6 +317,12 @@ def create_web_app(
         The session is checked, not just the cookie, so a stale cookie gets the splash page and
         never a detour through the sign-in page.
         """
+        if single_log:
+            return RedirectResponse(
+                "/log" if request.cookies.get(cookie) else "/login",
+                303,
+                headers={"Cache-Control": "no-store", "Vary": "Cookie"},
+            )
         if accounts_on and request.cookies.get(session_cookie):
             who = await current(request)
             if who and not who["pending"]:
@@ -333,6 +347,8 @@ def create_web_app(
     @app.api_route("/demo", methods=["GET", "HEAD"], response_class=HTMLResponse)
     async def demo(request: Request) -> Response:
         """A read-only example log of sample events, for visitors who want to see it first."""
+        if single_log:
+            raise HTTPException(404)
         filters = parse_filters(request.query_params)
         events = sample.matching(sample.sample_events(timefmt.now()), filters.tags, filters.status)
         return page(
@@ -350,6 +366,8 @@ def create_web_app(
     ):
 
         def public_page(request: Request, name: str = name) -> HTMLResponse:
+            if single_log:  # these describe the hosted service, not your own server
+                raise HTTPException(404)
             return page(request, name, public=True)
 
         app.add_api_route(path, public_page, methods=["GET", "HEAD"], include_in_schema=False)
@@ -428,9 +446,15 @@ def create_web_app(
             return page(
                 request, "login.html", 429, headers={"Retry-After": "60"}, error=error, slug=""
             )
-        creds = parse_credentials(slug, token, base_domain)
+        creds = (
+            parse_single_token(token) if single_log else parse_credentials(slug, token, base_domain)
+        )
         if creds is None:
-            error = "Enter your log name and a read token, or paste a feed URL."
+            error = (
+                "Enter a read token, or paste a feed URL."
+                if single_log
+                else "Enter your log name and a read token, or paste a feed URL."
+            )
             return page(request, "login.html", 400, error=error, slug=slug.strip()[:63])
         result: ApiResult = await run_in_threadpool(
             request.app.state.fetch, creds[0], creds[1], [("limit", "1")]
@@ -441,9 +465,12 @@ def create_web_app(
                 cookie, f"{creds[0]}:{creds[1]}", max_age=SESSION_SECONDS, **cookie_flags
             )
             return response
+        mismatch = (
+            "That token doesn't match." if single_log else "That log name and token don't match."
+        )
         status, error = {
-            401: (401, "That log name and token don't match."),
-            404: (401, "That log name and token don't match."),
+            401: (401, mismatch),
+            404: (401, mismatch),
             403: (
                 403,
                 "That token can't read this log. Sign in with a read token; a write token "
@@ -482,6 +509,8 @@ def create_web_app(
     @app.api_route("/pricing", methods=["GET", "HEAD"], include_in_schema=False)
     async def pricing(request: Request) -> HTMLResponse:
         """The plans; with the discovery flag on, also the planned features people can ask about."""
+        if single_log:
+            raise HTTPException(404)
         mine: set[str] = set()
         signed_in = False
         home = "/log" if request.cookies.get(cookie) else ""

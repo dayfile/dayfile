@@ -43,3 +43,22 @@ def _feed_url(text: str, suffix: str) -> tuple[str, str] | None:
     if not host.endswith(suffix) or not path:
         return None
     return host.removesuffix(suffix), path.group(1)
+
+
+SINGLE_LOG = "log"  # the one name a self-hosted server's only log goes by inside the web app
+FEED_ANY = re.compile(r"/t/([^/]+)/(?:f/[^/]+\.|feed\.)(?:json|atom)")
+
+
+def parse_single_token(text: str) -> tuple[str, str] | None:
+    """Return (the fixed log name, token) from a bare token or any pasted feed URL, else None."""
+    text = text.strip()
+    if "/" in text or ":" in text:
+        try:
+            parts = urlsplit(text)
+        except ValueError:
+            return None
+        if parts.scheme not in ("http", "https") or parts.username or parts.password:
+            return None
+        match = FEED_ANY.fullmatch(parts.path)
+        text = match.group(1) if match else ""
+    return (SINGLE_LOG, text) if TOKEN.fullmatch(text) else None

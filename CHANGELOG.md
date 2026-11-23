@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Self-hosting: an optional read-only web view of your one log. Set `DAYFILE_SINGLE_LOG=1` on the web app (`pip install "dayfile[web]"`, then `uvicorn dayfile.web:app`); sign in with a read token. The Docker setup in `deploy/selfhost` starts it behind Caddy, and `dayfile-web.service` runs it under systemd. `DAYFILE_INSECURE_COOKIES=1` is for plain http outside localhost.
+
 ## 0.1.5
 
 - Docker: the container trusts the proxy in front of it, so feed links (`feed_url`, the Atom self link) say `https://` behind Caddy instead of `http://`.

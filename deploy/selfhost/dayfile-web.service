@@ -1,0 +1,15 @@
+# systemd --user unit: the web view of your log (sign in with a read token).
+# Needs `pip install "dayfile[web]"` in the same virtualenv. On plain http outside localhost, add
+# Environment=DAYFILE_INSECURE_COOKIES=1 (the session cookie is otherwise HTTPS-only).
+[Unit]
+Description=dayfile web view
+After=dayfile.service
+
+[Service]
+Environment=DAYFILE_SINGLE_LOG=1
+Environment=DAYFILE_API_URL=http://127.0.0.1:8000
+ExecStart=%h/.local/share/dayfile/venv/bin/uvicorn dayfile.web:app --host 127.0.0.1 --port 8001
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

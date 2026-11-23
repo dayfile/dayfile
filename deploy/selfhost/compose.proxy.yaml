@@ -1,6 +1,8 @@
 # dayfile behind a reverse proxy you already run (Traefik, Nginx Proxy Manager, your own Caddy):
 #   docker compose -f compose.proxy.yaml up -d
-# Publishes dayfile on 127.0.0.1:8000 only; point your proxy at it and terminate TLS there.
+# Publishes the API and feeds on 127.0.0.1:8000 and the web view on 127.0.0.1:8001; point your proxy
+# at them (API paths to 8000, everything else to 8001; see the Caddyfile next to this file for the
+# list of API paths) and terminate TLS there. Skip the web service if you only want the API.
 # The proxy must send X-Forwarded-Proto and X-Forwarded-For, so feed links say https://.
 # Change the left side of the port mapping to "8000:8000" only if the proxy runs on another host.
 services:
@@ -12,5 +14,18 @@ services:
       - dayfile-data:/data
     environment:
       DAYFILE_AUTH_URI: ${DAYFILE_AUTH_URI:-}
+  web:
+    build: ../..
+    restart: unless-stopped
+    command: ["uvicorn", "dayfile.web:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    ports: ["127.0.0.1:8001:8001"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+    environment:
+      DAYFILE_SINGLE_LOG: "1"
+      DAYFILE_API_URL: http://dayfile:8000
+    depends_on: [dayfile]
 volumes:
   dayfile-data:

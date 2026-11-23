@@ -289,6 +289,10 @@ A tenant may hold 20 live tokens; tokens that expire within an hour are session 
 - **Headers and scripts.** Every response carries `Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`. Pages use no inline script or style and load nothing from other sites; the one script is a vendored, hash-checked htmx 2.0.4 (`src/dayfile/web/static/htmx.NOTICE`), configured not to use `eval` or inline styles. Signed-in pages are `Cache-Control: no-store`.
 - **Not in M15.** Accounts, GitHub sign-in, invite codes, token management and billing (M16).
 
+### Single-log mode (self-hosting)
+
+With `DAYFILE_SINGLE_LOG=1` the web app serves one self-hosted log (the API runs without tenants at `$DAYFILE_API_URL`). Sign-in takes only a read token, or a pasted feed URL of any host (`/t/<token>/feed.json|atom` or a named feed), and the log goes by the fixed name `log` inside the app; no `Host` is meaningful to the API. `/` redirects to `/log` (or `/login`). Accounts, GitHub sign-in, posting from the page and the pages about the hosted service (`/demo`, `/pricing`, `/terms`, `/privacy`, `/docs`) are absent (404), and the footer drops their links. A POST is same-origin when `Origin` matches the request's own `Host` (there is no configured public address); the Fetch Metadata fallback is unchanged. `DAYFILE_INSECURE_COOKIES=1` drops the `Secure` flag and the `__Host-` prefix for plain http outside localhost. The viewer, its filters and the live fragment are otherwise the hosted ones.
+
 ### Accounts (M16c)
 
 On when `$DAYFILE_ACCOUNTS_DB`, `$GITHUB_CLIENT_ID` and the file `$DAYFILE_GITHUB_SECRET_FILE` are all set; otherwise the routes do not exist and the login page offers only the read-token form. See `docs/design/m16-accounts.md`.
