@@ -201,15 +201,17 @@ def build_server(request: Request) -> Any:
     @server.tool()
     @guarded
     async def dayfile_close_todo(id: str, note: str | None = None) -> dict[str, Any]:
-        """Close an open to-do by id. Nothing is deleted; a closing event is appended.
-        `note` says why it was closed and is shown with the closing step."""
+        """Close an open to-do by id (the full id or its last 6 or more characters). Nothing is
+        deleted; a closing event is appended. `note` says why it was closed and is shown with
+        the closing step."""
         return await close_todo(request, id, note)
 
     @server.tool()
     @guarded
     async def dayfile_retract_event(id: str, note: str | None = None) -> dict[str, Any]:
-        """Retract an event that was a mistake. Nothing is deleted; a retracting event is
-        appended. Retracting a closing event reopens its target. `note` says why."""
+        """Retract an event that was a mistake, by id (the full id or its last 6 or more
+        characters). Nothing is deleted; a retracting event is appended. Retracting a closing
+        event reopens its target. `note` says why."""
         return await retract_event(request, id, note)
 
     return server

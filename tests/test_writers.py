@@ -355,3 +355,67 @@ def test_retract_endpoint_has_the_same_limits_as_close(client, conn):
         == 422
     )
     assert client.post("/events/nope/retract", headers=bearer(t)).status_code == 422
+
+
+def test_close_and_retract_accept_the_last_characters_of_an_id(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    todo = _open_todo(client, t)
+    tail = todo["id"][-6:].lower()  # case is ignored
+    r = client.post(f"/events/{tail}/close", json={"body": "done"}, headers=bearer(t))
+    assert r.status_code == 201
+    assert r.json()["refs"] == [{"rel": "completes", "id": todo["id"]}]  # stored in full
+    closing = r.json()
+    assert (
+        client.post(f"/events/{closing['id'][-8:]}/retract", headers=bearer(t)).status_code == 201
+    )
+    read = create_token(conn, ["self"])
+    events = client.get("/events", headers=bearer(read)).json()["events"]
+    assert next(e for e in events if e["id"] == todo["id"])["status"] == "open"
+
+
+def test_a_short_id_in_a_ref_is_expanded_and_look_alikes_are_read_as_digits(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    for n in (1, 2):
+        client.post("/events", json=ev(n, tags=["todo"]), headers=bearer(t))
+    target = "01JC8Z4Q7M2X9K3T5W6N8R0001"
+    tail = target[-6:].replace("0", "O")  # 00O1 style: O means zero
+    r = client.post(
+        "/events",
+        json={"refs": [{"rel": "completes", "id": tail}], "source": {"id": "adapter:phone"}},
+        headers=bearer(t),
+    )
+    assert r.status_code == 201 and r.json()["refs"][0]["id"] == target
+
+
+def test_a_short_id_that_matches_nothing_or_two_events_is_refused(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    for n in (1, 2):
+        client.post("/events", json=ev(n), headers=bearer(t))
+    miss = client.post("/events/ZZZZZZ/close", headers=bearer(t))
+    assert miss.status_code == 422 and "no event ends in" in miss.json()["error"]
+    conn.execute("BEGIN IMMEDIATE")
+    conn.execute(
+        "INSERT INTO events (id, source_id, occurred_at, visible_at, title)"
+        " VALUES ('01JC8Z4Q7M2X9K3T5W6P8R0001', 'x', '2026-11-06T10:00:00Z',"
+        " '2026-11-06T10:00:00Z', 'twin')"
+    )
+    seq = conn.execute("SELECT seq FROM events WHERE title = 'twin'").fetchone()[0]
+    conn.execute("INSERT INTO event_audience (seq, label) VALUES (?, 'self')", (seq,))
+    conn.execute("COMMIT")
+    twin = client.post("/events/8R0001/close", headers=bearer(t))
+    assert twin.status_code == 422 and "more than one event ends in" in twin.json()["error"]
+    assert client.post("/events/N8R0001/close", headers=bearer(t)).status_code == 201
+
+
+def test_a_short_id_never_finds_an_event_outside_the_audience(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    other = create_token(conn, ["family"], write_sources=["adapter:phone"])
+    hidden = client.post("/events", json=ev(7, audience=["family"]), headers=bearer(other)).json()
+    r = client.post(f"/events/{hidden['id'][-6:]}/close", headers=bearer(t))
+    assert r.status_code == 422 and "no event ends in" in r.json()["error"]
+
+
+def test_a_too_short_or_malformed_id_is_refused(client, conn):
+    t = create_token(conn, ["self"], write_sources=["adapter:phone"])
+    for bad in ("ABC12", "not-an-id", "UUUUUUU"):
+        assert client.post(f"/events/{bad}/close", headers=bearer(t)).status_code == 422

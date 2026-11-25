@@ -17,7 +17,7 @@ _HERE = Path(__file__).resolve().parent
 SCHEMA_PATH = (
     (_HERE / "schema.sql") if (_HERE / "schema.sql").exists() else _HERE.parents[1] / "schema.sql"
 )
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 VIEWS = ("event_state", "lifecycle_edges")  # drop order
 
 

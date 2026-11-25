@@ -27,7 +27,7 @@ from dayfile.render.atom import render_atom
 from dayfile.render.jsonfeed import render_json
 from dayfile.render.query import FeedQuery, QueryError, parse_query
 from dayfile.tenancy import DirectoryTenancy, Tenancy, Tenant
-from dayfile.ulid import new_ulid
+from dayfile.ulid import clean_id_tail, new_ulid
 
 MEDIA_TYPES = {
     "json": "application/feed+json",
@@ -600,8 +600,8 @@ def create_app(
 
 def _referring_event(rel: str, event_id: str, body: Any) -> dict[str, Any]:
     """The event that completes or retracts `event_id`, from an optional title and body."""
-    if not re.fullmatch(r"[0-9A-HJKMNP-TV-Z]{26}", event_id):
-        raise ValueError("not an event id")
+    if not re.fullmatch(r"[0-9A-HJKMNP-TV-Z]{26}", event_id) and clean_id_tail(event_id) is None:
+        raise ValueError("not an event id: use the full id or its last 6 or more characters")
     if not isinstance(body, dict) or set(body) - {"title", "body"}:
         raise ValueError("send a JSON object with only a title and a body, or nothing")
     return {"refs": [{"rel": rel, "id": event_id}], **body}

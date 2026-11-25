@@ -51,7 +51,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     ):
         refer = sub.add_parser(name, help=text)
-        refer.add_argument("id", help=f"the id of {what}")
+        refer.add_argument(
+            "id", help=f"the id of {what}: the last 6 or more characters of it, or all of it"
+        )
         refer.add_argument("--note", help="why")
         refer.add_argument(
             "--db",

@@ -1,7 +1,7 @@
 {% macro chain(nodes, acct) %}<ul class="chain">{% for n in nodes %}
   <li class="{{ "live" if n.live else "reversed" }}"><span>{{ {"completes": "Closed", "retracts": "Retracted", "supersedes": "Replaced"}[n.rel] }}</span>
     <time datetime="{{ n.event.visible_at }}" title="{{ n.event.visible_at|stamp }}">{{ n.event.visible_at|ago }}</time>
-    <code class="ref" title="Event {{ n.event.id }}">{{ n.event.id[-6:]|lower }}</code>
+    <code class="ref" data-id="{{ n.event.id }}" tabindex="0" role="button" title="Event {{ n.event.id }}. Click to copy the short id, Shift-click for the full id.">{{ n.event.id[-6:]|lower }}</code>
     {% if not n.live %}<em>undone</em>{% endif %}
     {% if n.retitled %}<strong class="why">{{ n.retitled }}</strong>{% endif %}
     {% if n.event.body %}<div class="why-text">{{ n.event.body|markdown }}</div>{% endif %}
@@ -12,7 +12,7 @@
     {% if e.status %}<span class="chip state" title="{% if e.status == "open" %}Status open: a to-do that is not closed yet{% elif e.status == "closed" %}Status closed: closed by a later event{% elif e.status == "superseded" %}Status superseded: replaced by a newer event{% else %}Status {{ e.status }}{% endif %}">{{ e.status }}</span>{% endif %}
     {% if e.urgency %}<span class="chip" title="Urgency from 0 (none) to 3 (highest)">urgency {{ e.urgency }}</span>{% endif %}
     {% if e.sig_status %}<span class="chip" title="Whether the sender's digital signature checks out">signature {{ e.sig_status }}</span>{% endif %}
-    <span class="right"><time datetime="{{ e.visible_at }}" title="{{ e.visible_at|stamp }}: when this event appeared in the log">{{ e.visible_at|ago }}</time><code class="ref" title="Event {{ e.id }}, number {{ e.seq }} in the log">{{ e.id[-6:]|lower }}</code></span>
+    <span class="right"><time datetime="{{ e.visible_at }}" title="{{ e.visible_at|stamp }}: when this event appeared in the log">{{ e.visible_at|ago }}</time><code class="ref" data-id="{{ e.id }}" tabindex="0" role="button" title="Event {{ e.id }}, number {{ e.seq }} in the log. Click to copy the short id, Shift-click for the full id.">{{ e.id[-6:]|lower }}</code></span>
   </div>
   <h3>{{ e.title }}</h3>
   {% if e.body %}{% if e.body|length > 700 or e.body.count("\n") >= 12 %}<input type="checkbox" class="more-toggle" id="more-{{ e.id }}" aria-label="Show the whole text of this event">
@@ -20,7 +20,7 @@
   <label class="more" for="more-{{ e.id }}"><span class="more-open">Read more</span><span class="more-close">Show less</span></label>
   {% else %}<div class="text">{{ e.body|markdown }}</div>{% endif %}{% endif %}
   {% if e.links %}<ul>{% for l in e.links %}{% set href = l.href|safe_href %}<li>{{ l.rel }}: {% if href %}<a href="{{ href }}" rel="noopener noreferrer nofollow">{{ l.href }}</a>{% else %}{{ l.href }}{% endif %}</li>{% endfor %}</ul>{% endif %}
-  {% if e.refs %}<ul>{% for r in e.refs %}<li>{{ r.rel }} <code class="ref" title="Event {{ r.id }}">{{ r.id[-6:]|lower }}</code></li>{% endfor %}</ul>{% endif %}
+  {% if e.refs %}<ul>{% for r in e.refs %}<li>{{ r.rel }} <code class="ref" data-id="{{ r.id }}" tabindex="0" role="button" title="Event {{ r.id }}. Click to copy the short id, Shift-click for the full id.">{{ r.id[-6:]|lower }}</code></li>{% endfor %}</ul>{% endif %}
   <div class="meta"><span title="Source: who sent this event">source: {{ e.source.id }}{% if e.tags %}, tags:{% endif %}</span>{% for t in e.tags %}<span class="chip" title="Tag: a free label for grouping events; filter by it above">{{ t }}</span>{% endfor %}</div>
   {% if nav_state == "account" and e.status == "open" %}
   <div class="act"><form method="post" action="/log/event/{{ e.id }}/close"><input type="text" name="note" maxlength="1000" placeholder="Why? (optional)" aria-label="Why it is closed (optional)" autocomplete="off"><button class="ghost" type="submit">Close</button></form></div>

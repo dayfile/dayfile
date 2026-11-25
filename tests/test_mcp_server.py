@@ -106,3 +106,9 @@ def test_retract_can_say_why(request_fn):
     stored = run(m.add_event(request_fn, "Typo", None, [], False, 0, None))
     retraction = run(m.retract_event(request_fn, stored["id"], "posted by mistake"))
     assert retraction["body"] == "posted by mistake"
+
+
+def test_close_todo_takes_the_last_characters_of_an_id(request_fn):
+    stored = run(m.add_event(request_fn, "Renew domain", None, [], True, 0, None))
+    run(m.close_todo(request_fn, stored["id"][-6:]))
+    assert run(m.get_event(request_fn, stored["id"]))["status"] == "closed"

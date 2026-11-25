@@ -1285,3 +1285,17 @@ def test_a_bad_contact_save_writes_nothing(db, gh, control):
         assert "error=" in r.headers["location"]
     assert email_of(db) == [] and answer_of(db) == []
     assert web.post("/account/contact", data={"plans": "x"}).status_code == 403
+
+
+def test_event_id_badges_carry_the_full_id_and_the_copy_script_is_served(live, db):
+    web, _ = live
+    web.app.state.fetch = lambda slug, token, params: live[1](slug, token, params)
+    with_log(web, db)
+    web.post("/log/post", data={"title": "Dentist", "tags": "todo"}, headers=POST)
+    web.get("/log")
+    page = web.get("/log?fresh=1").text
+    full = re.search(r'data-id="([0-9A-Z]{26})"', page).group(1)
+    assert f">{full[-6:].lower()}</code>" in page and f"Event {full}" in page
+    assert 'src="/static/copy-id.js?v=' in page and "<script>" not in page
+    script = web.get("/static/copy-id.js")
+    assert script.status_code == 200 and "dataset.id" in script.text

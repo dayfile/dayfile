@@ -45,4 +45,4 @@
 </dialog>
 {% endif %}
 {% endblock %}
-{% block scripts %}<script src="/static/htmx.min.js" defer></script>{% if nav_state == "account" %}<script src="/static/log.js?v={{ asset_v["log.js"] }}" defer></script>{% endif %}{% endblock %}
+{% block scripts %}<script src="/static/htmx.min.js" defer></script><script src="/static/copy-id.js?v={{ asset_v["copy-id.js"] }}" defer></script>{% if nav_state == "account" %}<script src="/static/log.js?v={{ asset_v["log.js"] }}" defer></script>{% endif %}{% endblock %}

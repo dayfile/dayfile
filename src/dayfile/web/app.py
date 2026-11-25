@@ -225,7 +225,7 @@ def create_web_app(
     # Static files are cached for a week, so the page links carry a hash of the file they name.
     templates.env.globals["asset_v"] = {
         name: hashlib.sha256((HERE / "static" / name).read_bytes()).hexdigest()[:10]
-        for name in ("site.css", "log.js", "tokens.js", "settings.js")
+        for name in ("site.css", "log.js", "tokens.js", "settings.js", "copy-id.js")
     }
     open_signup = (signup or os.environ.get("DAYFILE_SIGNUP", "invite")) == "open"
     templates.env.globals["open_signup"] = open_signup  # else an invite code is needed

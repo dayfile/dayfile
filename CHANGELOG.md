@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Short ids: close and retract take the last six (or more) characters of an event id, as `dayfile close pyz7d2` or `POST /events/pyz7d2/close`, in the API, CLI and assistant tools. Case is ignored; a tail that matches no event or more than one is refused. A new index (schema 12) keeps the lookup fast.
+- Web view: click an event's ID badge (or press Enter on it) to copy its short id, Shift-click for the full id.
+
 ## 0.2.1
 
 - Closing a to-do, or retracting a mistaken event, can say why: `POST /events/{id}/close` and `/retract` with an optional `title` and `body`, `dayfile close` and `dayfile retract` with `--note`, an optional `note` on the assistant's `dayfile_close_todo` and `dayfile_retract_event`, and an optional *Why?* field on the web Close button. History shows the note.

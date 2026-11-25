@@ -169,9 +169,12 @@ CREATE TABLE IF NOT EXISTS heartbeats (
 
 -- Derived state is computed by db.refresh_live_edges (which resolves retractions of lifecycle
 -- events and cycles, with the clock) into temp.live_edges; see db.STATE_CASE.
+-- Short ids: close and retract accept the last six or more characters of an event id, and this
+-- index finds the event without scanning the log (see ingest.core.expand_short_refs).
+CREATE INDEX IF NOT EXISTS ix_events_tail ON events (substr(id, -6));
 -- END UPGRADABLE
 
-PRAGMA user_version = 11;
+PRAGMA user_version = 12;
 
 -- Access tokens. Tokens are mutable records (revocation), unlike events.
 -- Store only a hash of the secret. The scope is the set of audience labels.
