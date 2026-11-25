@@ -232,6 +232,10 @@ textarea { width: 100%; font: inherit; }
 .event .meta { row-gap: 4px; }
 .event .meta .right { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; }
 .ref { font: 600 .8rem "JetBrains Mono Variable", ui-monospace, Menlo, monospace; color: var(--muted); background: var(--code); border-radius: 6px; padding: 1px 7px; }
+.ref[data-id] { cursor: pointer; }
+.ref[data-id]:hover, .event .meta .ref[data-id]:hover { color: var(--fg); }
+.ref[data-id]:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.ref.copied, .event .meta .ref.copied { color: var(--ok); }
 .event h3 { margin: 8px 0 4px; font-size: 1.2rem; }
 .event .meta:last-of-type { margin-top: 6px; }
 .chip.type { background: var(--code); border-color: transparent; font-weight: 600; color: var(--fg); }

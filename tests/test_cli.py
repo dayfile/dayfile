@@ -136,3 +136,20 @@ def test_retract_builds_an_event_that_retracts_the_target():
     target = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     ev = cli.build_close_event(cli.parse_args(["retract", target, "--note", "typo"]))
     assert ev["refs"] == [{"rel": "retracts", "id": target}] and ev["body"] == "typo"
+
+
+def test_close_takes_the_last_characters_of_an_id(tmp_path, capsys):
+    db_path = tmp_path / "d.db"
+    assert cli.main(["add", "Renew domain", "--todo", "--db", str(db_path)]) == 0
+    todo_id = capsys.readouterr().out.split()[0]
+    assert cli.main(["close", todo_id[-6:], "--db", str(db_path)]) == 0
+    conn = connect(db_path)
+    try:
+        status = conn.execute(
+            "SELECT 1 FROM lifecycle_edges WHERE target_id = ?", (todo_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+    assert status is not None
+    assert cli.main(["close", "ZZZZZZ", "--db", str(db_path)]) == 1
+    assert "no event ends in" in capsys.readouterr().err

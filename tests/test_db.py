@@ -107,3 +107,20 @@ def test_existing_database_file_keeps_its_mode(tmp_path):
     path.chmod(0o640)
     connect(path).close()
     assert path.stat().st_mode & 0o777 == 0o640
+
+
+def test_the_short_id_index_exists_and_old_databases_get_it(tmp_path):
+    from dayfile.db import SCHEMA_VERSION, connect
+
+    path = tmp_path / "old.db"
+    conn = connect(path)
+    conn.executescript("DROP INDEX ix_events_tail; PRAGMA user_version = 11;")
+    conn.close()
+    conn = connect(path)
+    names = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'index'")}
+    assert "ix_events_tail" in names
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 12
+    plan = conn.execute(
+        "EXPLAIN QUERY PLAN SELECT id FROM events WHERE substr(id, -6) = 'ABC123'"
+    ).fetchall()
+    assert any("ix_events_tail" in str(r[3]) for r in plan)

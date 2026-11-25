@@ -9,6 +9,7 @@ from dayfile import db, signing
 from dayfile.auth.tokens import Principal
 from dayfile.models import EventValidationError, validate_event
 from dayfile.timefmt import normalize
+from dayfile.ulid import clean_id_tail
 
 TIME_FIELDS = ("occurred_at", "visible_at", "expires_at")
 
@@ -68,7 +69,7 @@ def ingest_events(
     prepared, errors = [], []
     for i, event in enumerate(events):
         try:
-            ev = prepare(_inherit_title(conn, event))
+            ev = prepare(_inherit_title(conn, expand_short_refs(conn, event)))
             _check_signature(conn, ev)
             prepared.append(ev)
         except IngestError as e:
@@ -88,6 +89,42 @@ def ingest_events(
 
 
 CLOSING = ("completes", "supersedes", "retracts")
+
+
+def expand_short_refs(conn: sqlite3.Connection, event: Any) -> Any:
+    """Replace the last 6 to 25 characters of an id in a closing ref with the full event id.
+
+    Only events sharing an audience label with the new event are searched, so a short id never
+    reveals an event the writer could not see. An id that matches no event or more than one is an
+    IngestError. Signed events are never rewritten, so a short id in one fails validation.
+    """
+    if not isinstance(event, dict) or "sig" in event or not isinstance(event.get("refs"), list):
+        return event
+    labels = event.get("audience") or ["self"]
+    if not isinstance(labels, list):
+        return event
+    refs = []
+    for ref in event["refs"]:
+        raw = ref.get("id") if isinstance(ref, dict) and ref.get("rel") in CLOSING else None
+        tail = clean_id_tail(raw) if isinstance(raw, str) else None
+        if tail is not None:
+            ref = {**ref, "id": _full_id(conn, raw, tail, [str(x) for x in labels])}
+        refs.append(ref)
+    return {**event, "refs": refs}
+
+
+def _full_id(conn: sqlite3.Connection, raw: str, tail: str, labels: list[str]) -> str:
+    rows = conn.execute(
+        "SELECT e.id FROM events e WHERE substr(e.id, -6) = ? AND substr(e.id, -?) = ?"
+        " AND EXISTS (SELECT 1 FROM event_audience a WHERE a.seq = e.seq"
+        f" AND a.label IN ({', '.join('?' for _ in labels)})) LIMIT 2",
+        [tail[-6:], len(tail), tail, *labels],
+    ).fetchall()
+    if not rows:
+        raise IngestError(f"no event ends in {raw!r}")
+    if len(rows) > 1:
+        raise IngestError(f"more than one event ends in {raw!r}; give more characters")
+    return rows[0]["id"]
 
 
 def _inherit_title(conn: sqlite3.Connection, event: Any) -> Any:

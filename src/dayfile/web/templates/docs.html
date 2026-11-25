@@ -36,7 +36,7 @@ curl -X POST https://USERNAME.dayfile.cloud/events/ID/close \
   -H "Authorization: Bearer WRITE_TOKEN" \
   -H "content-type: application/json" \
   -d '{"body":"Renewed through 2027."}'</code></pre>
-<p>The first event never changes; it now reads as <code>closed</code>. The body is why it was closed. It is optional, and so is a <code>title</code>; without one the closing event takes the to-do's title. Behind this is an ordinary event with <code>refs: [{"rel": "completes", "id": ...}]</code>, which you can post yourself. To hide an event that was a mistake, post to <code>/events/ID/retract</code> the same way; retracting a closing event reopens the to-do.</p>
+<p>In place of <code>ID</code> you can give just the last six characters, as the web view shows on every event (click one to copy it); a longer ending works too, and a tail that matches no event or two is refused. The first event never changes; it now reads as <code>closed</code>. The body is why it was closed. It is optional, and so is a <code>title</code>; without one the closing event takes the to-do's title. Behind this is an ordinary event with <code>refs: [{"rel": "completes", "id": ...}]</code>, which you can post yourself. To hide an event that was a mistake, post to <code>/events/ID/retract</code> the same way; retracting a closing event reopens the to-do.</p>
 <h3>Read it back</h3>
 <pre><code>curl -H "Authorization: Bearer READ_TOKEN" https://USERNAME.dayfile.cloud/events</code></pre>
 <p>For an RSS reader (any feed reader that understands Atom or JSON Feed) that cannot send headers, use the token in the path:</p>
