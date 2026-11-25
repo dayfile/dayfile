@@ -1321,3 +1321,22 @@ def test_polling_reloads_the_page_when_something_was_closed_and_clears_the_empty
     web.post(f"/log/event/{original}/close", headers=POST)
     assert web.get(poll).headers.get("HX-Refresh") == "true"
     assert web.get(poll + "&tag=todo").headers.get("HX-Refresh") == "true"  # filtered view too
+
+
+def test_arriving_from_another_site_asks_for_a_click_instead_of_looping(posting, db):
+    with_log(posting, db)
+    posting.cookies.delete("dayfile")  # SameSite=Strict: a link from another site does not carry it
+    cross = {"Sec-Fetch-Site": "cross-site"}
+    path = "/"
+    for _ in range(6):
+        r = posting.get(path, headers=cross)
+        if r.status_code != 303:
+            break
+        path = r.headers["location"]
+    else:
+        pytest.fail("redirect loop between /log and /account")
+    assert r.status_code == 200 and 'action="/account/view"' in r.text
+    assert posting.cookies.get("dayfile") is None  # a cross-site GET never starts a viewer
+    opened = posting.post("/account/view", headers={**POST, "Sec-Fetch-Site": "same-origin"})
+    assert opened.status_code == 303 and opened.headers["location"] == "/log?fresh=1"
+    assert posting.cookies.get("dayfile")
