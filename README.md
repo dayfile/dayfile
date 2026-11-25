@@ -12,6 +12,8 @@ is the source of truth; feeds are projections of it, addressed by URL queries su
 feeds and the API. Getting events into the right shape from other systems (email, SMS, cron jobs) is the job of whatever
 posts them; the repo includes optional adapters for self-hosters.
 
+![Adding events with the dayfile command shows them in the web view; closing a to-do by its six-character id keeps the reason in History](https://raw.githubusercontent.com/dayfile/dayfile/master/docs/img/web-view.gif)
+
 - Append-only SQLite log, enforced by triggers. State changes are new events that point back at the original (close it, replace it, retract it); the status of an event is worked out from that chain.
 - Time release (`visible_at`, `expires_at`), idempotent ingest, deny-by-default audiences.
 - A JSON API (`GET /events`, long-poll, live SSE stream) next to the feeds, and an MCP server so assistants such as Claude can read and write the log.

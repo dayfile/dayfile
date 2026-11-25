@@ -1299,3 +1299,25 @@ def test_event_id_badges_carry_the_full_id_and_the_copy_script_is_served(live, d
     assert 'src="/static/copy-id.js?v=' in page and "<script>" not in page
     script = web.get("/static/copy-id.js")
     assert script.status_code == 200 and "dataset.id" in script.text
+
+
+def test_polling_reloads_the_page_when_something_was_closed_and_clears_the_empty_message(live, db):
+    web, _ = live
+    web.app.state.fetch = lambda slug, token, params: live[1](slug, token, params)
+    with_log(web, db)
+    web.get("/log")
+    empty = web.get("/log?fresh=1").text
+    assert 'id="empty-state"' in empty
+    web.post("/log/post", data={"title": "Dentist", "tags": "todo"}, headers=POST)
+    web.get("/log")
+    page = web.get("/log?fresh=1").text
+    poll = re.search(r'hx-get="(/log/new\?[^"]+)"', page).group(1).replace("&amp;", "&")
+    plain = web.get(poll)
+    assert "HX-Refresh" not in plain.headers
+    web.post("/log/post", data={"title": "Lunch"}, headers=POST)
+    arrived = web.get(poll)
+    assert "Lunch" in arrived.text and 'id="empty-state" hx-swap-oob="delete"' in arrived.text
+    original = re.search(r"/log/event/([0-9A-Z]{26})/close", page).group(1)
+    web.post(f"/log/event/{original}/close", headers=POST)
+    assert web.get(poll).headers.get("HX-Refresh") == "true"
+    assert web.get(poll + "&tag=todo").headers.get("HX-Refresh") == "true"  # filtered view too
