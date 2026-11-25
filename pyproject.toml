@@ -1,6 +1,6 @@
 [project]
 name = "dayfile"
-version = "0.2.1"
+version = "0.2.2"
 description = "A personal, append-only event log exposed as feed views."
 readme = "README.md"
 requires-python = ">=3.11"

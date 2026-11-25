@@ -1,2 +1,3 @@
 <div id="poller" hx-get="{{ poll_url }}" hx-trigger="every 5s" hx-swap="outerHTML"></div>
 {% for e in events %}{% include "_event.html" %}{% endfor %}
+{% if events %}<div id="empty-state" hx-swap-oob="delete"></div>{% endif %}

@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.2
 
 - Short ids: close and retract take the last six (or more) characters of an event id, as `dayfile close pyz7d2` or `POST /events/pyz7d2/close`, in the API, CLI and assistant tools. Case is ignored; a tail that matches no event or more than one is refused. A new index (schema 12) keeps the lookup fast.
 - Web view: click an event's ID badge (or press Enter on it) to copy its short id, Shift-click for the full id.
+- Web view: the page now follows the log live more faithfully. "Nothing here yet." goes away when the first event arrives, and when something is closed, replaced or retracted the page reloads so the card shows its new status.
+- README: a short clip of the web view at the top.
 
 ## 0.2.1
 

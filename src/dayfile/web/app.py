@@ -1605,10 +1605,34 @@ def create_web_app(
         if result.status in (401, 403, 404):
             return lapsed_poll(request)
         if result.status == 200 and isinstance(result.body, dict):
+            if await lifecycle_arrived(request, who, after, result.body["events"], filters):
+                return Response(headers={"HX-Refresh": "true"})  # a card's status changed
             events, body = cards(result.body["events"]), result.body
         else:  # keep polling from the same place
             events, body = [], {"cursor": after, "released_cursor": released}
         return page(request, "_new.html", events=events, **cursors(body, filters))
+
+    async def lifecycle_arrived(
+        request: Request, who: tuple[str, str], after: str, polled: list[dict[str, Any]], f: Filters
+    ) -> bool:
+        """Whether an event closed, replaced or retracted another since the cursor.
+
+        Such an event is not a card, so the poll alone would leave the old card showing its old
+        status; the page reloads instead. Under a filter the closer may not match it, so look again
+        without one.
+        """
+
+        def closes(events: list[dict[str, Any]]) -> bool:
+            return any(r["rel"] in LIFECYCLE for e in events for r in e.get("refs", []))
+
+        if closes(polled):
+            return True
+        if not (f.tags or f.status):
+            return False
+        params = [("since_seq", after), ("limit", "200")]
+        params += [("status", s) for s in STATUSES["all"]]
+        again: ApiResult = await run_in_threadpool(request.app.state.fetch, who[0], who[1], params)
+        return again.status == 200 and isinstance(again.body, dict) and closes(again.body["events"])
 
     return app
 

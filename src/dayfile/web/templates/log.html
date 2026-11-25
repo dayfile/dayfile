@@ -16,7 +16,7 @@
   <div id="poller" hx-get="{{ poll_url }}" hx-trigger="every 5s" hx-swap="outerHTML"></div>
   {% for e in events %}{% include "_event.html" %}{% endfor %}
   {% if not events %}{% if nav_state == "account" and not filters.tags and not filters.status %}
-  <div class="first">
+  <div class="first" id="empty-state">
     <h2>Your log is ready at {{ slug }}.{{ base_domain }}. Send the first event.</h2>
     <ol>
       {% if write_tokens %}
@@ -36,7 +36,7 @@
       <li>The event appears right here, by itself. Or skip the token and use <strong>Post</strong> above.</li>
     </ol>
   </div>
-  {% else %}<p class="empty">Nothing here yet.</p>{% endif %}{% endif %}
+  {% else %}<p class="empty" id="empty-state">Nothing here yet.</p>{% endif %}{% endif %}
 </section>
 {% if nav_state == "account" %}
 <dialog id="post-dialog" class="modal" aria-labelledby="post-h">
