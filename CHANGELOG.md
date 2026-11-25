@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed a redirect loop for a signed-in visitor following a link to the site from elsewhere (the homepage link on PyPI, say): the browser gave up between `/log` and `/account`. They now see an "Open your log" button.
+
 ## 0.2.2
 
 - Short ids: close and retract take the last six (or more) characters of an event id, as `dayfile close pyz7d2` or `POST /events/pyz7d2/close`, in the API, CLI and assistant tools. Case is ignored; a tail that matches no event or more than one is refused. A new index (schema 12) keeps the lookup fast.

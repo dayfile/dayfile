@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Open your log · dayfile{% endblock %}
+{% block main %}
+<h1>Welcome back, {{ login }}</h1>
+<p class="lede">You are signed in. Your log is <strong>{{ slug }}.{{ base_domain }}</strong>.</p>
+<form method="post" action="/account/view"><button type="submit">Open your log</button></form>
+{% endblock %}

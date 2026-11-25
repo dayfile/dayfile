@@ -1223,12 +1223,17 @@ def create_web_app(
             return response
 
         async def open_viewer(request: Request) -> Response | None:
-            """For an account session with no log cookie, start one; None if it cannot."""
-            if request.headers.get("sec-fetch-site", "same-origin") not in ("same-origin", "none"):
-                return None
+            """For an account session with no log cookie, start one; None if it cannot.
+
+            A visitor sent here by another site (a link, say) is not given a viewer by a GET, which
+            any page could trigger. They get a page with one button instead; sending them to
+            /account would only send them back here, and the browser gives up on the loop.
+            """
             who = await current(request)
             if who is None or who["pending"] or not who["slug"] or control is None:
                 return None
+            if request.headers.get("sec-fetch-site", "same-origin") not in ("same-origin", "none"):
+                return page(request, "open_log.html", **nav(who, ""))
             return await viewer_redirect(request, who)
 
         viewer_hook = open_viewer
